@@ -1,10 +1,8 @@
 package ru.skillbranch.skillarticles.extensions
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.os.Build
 import android.util.TypedValue
+import ru.skillbranch.skillarticles.R
 
 fun Context.dpToPx(dp: Int): Float {
     return TypedValue.applyDimension(
@@ -20,6 +18,12 @@ fun Context.dpToIntPx(dp: Int): Int {
         dp.toFloat(),
         this.resources.displayMetrics
     ).toInt()
+}
+
+fun Context.actionBarHeight(): Float {
+    val tv = TypedValue()
+    theme.resolveAttribute(R.attr.actionBarSize, tv, true)
+    return TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics).toFloat()
 }
 
 
