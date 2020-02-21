@@ -1,89 +1,32 @@
 package ru.skillbranch.skillarticles.ui.custom.behaviors
 
-import android.content.Context
-import android.util.AttributeSet
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import ru.skillbranch.skillarticles.extensions.actionBarHeight
-import ru.skillbranch.skillarticles.extensions.dpToPx
+import androidx.core.view.marginRight
 import ru.skillbranch.skillarticles.ui.custom.ArticleSubmenu
+import ru.skillbranch.skillarticles.ui.custom.Bottombar
 
-class SubmenuBehavior(
-    context: Context,
-    attrs: AttributeSet? = null
-) : CoordinatorLayout.Behavior<ArticleSubmenu>(context, attrs) {
+class SubmenuBehavior : CoordinatorLayout.Behavior<ArticleSubmenu>() {
 
-    // width + margin
-    private val subMenuWidth = context.dpToPx(200 + 8)
-    // to hide bottombar and submenu at the same time
-    private val relation = subMenuWidth / context.actionBarHeight()
-
-    override fun onStartNestedScroll(
-        coordinatorLayout: CoordinatorLayout,
+    override fun layoutDependsOn(
+        parent: CoordinatorLayout,
         child: ArticleSubmenu,
-        directTargetChild: View,
-        target: View,
-        axes: Int
-    ): Boolean = true
+        dependency: View
+    ): Boolean = dependency is Bottombar
 
-    override fun onNestedScroll(
-        coordinatorLayout: CoordinatorLayout,
-        articleSubmenu: ArticleSubmenu,
-        target: View,
-        dxConsumed: Int,
-        dyConsumed: Int,
-        dxUnconsumed: Int,
-        dyUnconsumed: Int,
-        type: Int,
-        consumed: IntArray
-    ) {
+    override fun onDependentViewChanged(
+        parent: CoordinatorLayout,
+        child: ArticleSubmenu,
+        dependency: View
+    ): Boolean = if (child.isOpen && dependency.translationY >= 0f) {
+        animate(child, dependency)
+        true
+    } else false
 
-        val expectedTranslation = articleSubmenu.translationX + dyConsumed * relation
-
-        when {
-            expectedTranslation in 0f..subMenuWidth ->
-                articleSubmenu.translationX = expectedTranslation
-
-            expectedTranslation > subMenuWidth ->
-                articleSubmenu.translationX = subMenuWidth
-
-            expectedTranslation < 0 ->
-                articleSubmenu.translationX = 0f
-        }
-
-        super.onNestedScroll(
-            coordinatorLayout,
-            articleSubmenu,
-            target,
-            dxConsumed,
-            dyConsumed,
-            dxUnconsumed,
-            dyUnconsumed,
-            type,
-            consumed
-        )
+    private fun animate(child: View, dependency: View) {
+        val fraction = dependency.translationY / dependency.height
+        child.translationX = (child.width + child.marginRight) * fraction
     }
 
-    override fun onNestedFling(
-        coordinatorLayout: CoordinatorLayout,
-        articleSubmenu: ArticleSubmenu,
-        target: View,
-        velocityX: Float,
-        velocityY: Float,
-        consumed: Boolean
-    ): Boolean {
 
-        articleSubmenu.animate()
-            .translationX(if (velocityY > 0) subMenuWidth else 0f)
-            .duration = 200
-
-        return super.onNestedFling(
-            coordinatorLayout,
-            articleSubmenu,
-            target,
-            velocityX,
-            velocityY,
-            consumed
-        )
-    }
 }
