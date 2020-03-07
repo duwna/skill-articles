@@ -37,8 +37,28 @@ object MarkdownParser {
     /**
      * clear markdown text to string without markdown characters
      */
-    fun clear(string: String?): String? = string?.let {
-        elementsPattern.matcher(it).replaceAll("")
+    fun clear(string: String?): String? {
+        string ?: return null
+        val markdownText = parse(string)
+        return buildString {
+            markdownText.elements.spread().filter { it.elements.isEmpty() }
+                .forEach { append(it.text) }
+        }
+    }
+
+    private fun Element.spread(): List<Element> {
+        val elements = mutableListOf<Element>()
+        elements.add(this)
+        elements.addAll(this.elements.spread())
+        return elements
+    }
+
+    private fun List<Element>.spread(): List<Element> {
+        val elements = mutableListOf<Element>()
+        if (this.isNotEmpty()) elements.addAll(
+            this.fold(mutableListOf()) { acc, el -> acc.also { it.addAll(el.spread()) } }
+        )
+        return elements
     }
 
     /**
