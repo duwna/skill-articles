@@ -13,7 +13,7 @@ class AttrValue(@AttrRes private val res: Int) : ReadOnlyProperty<Context, Int> 
         if (value == null) {
             val tv = TypedValue()
             if (thisRef.theme.resolveAttribute(res, tv, true)) value = tv.data
-            else throw Resources.NotFoundException("Resource with if $res not found")
+            else throw Resources.NotFoundException("Resource with id $res not found")
         }
         return value!!
     }

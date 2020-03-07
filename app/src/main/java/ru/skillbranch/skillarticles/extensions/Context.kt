@@ -1,8 +1,11 @@
 package ru.skillbranch.skillarticles.extensions
 
 import android.content.Context
+import android.content.res.Resources
 import android.util.TypedValue
+import androidx.annotation.AttrRes
 import ru.skillbranch.skillarticles.R
+import ru.skillbranch.skillarticles.ui.delegates.AttrValue
 
 fun Context.dpToPx(dp: Int): Float {
     return TypedValue.applyDimension(
@@ -26,6 +29,11 @@ fun Context.actionBarHeight(): Float {
     return TypedValue.complexToDimensionPixelSize(tv.data, resources.displayMetrics).toFloat()
 }
 
+fun Context.attrValue(@AttrRes res: Int): Int {
+    val tv = TypedValue()
+    return if (theme.resolveAttribute(res, tv, true)) tv.data
+    else throw Resources.NotFoundException("Resource with id $res not found")
+}
 
 //val Context.isNetworkAvailable: Boolean
 //    get() {
