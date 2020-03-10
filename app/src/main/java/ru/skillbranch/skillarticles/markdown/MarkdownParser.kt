@@ -209,7 +209,7 @@ object MarkdownParser {
                 11 -> {
                     val fullListString = string.subSequence(startIndex, endIndex)
                     val numbersCount = fullListString.indexOf('.')
-                    val order = fullListString.subSequence(0, numbersCount)
+                    val order = fullListString.subSequence(0, numbersCount.inc())
                     text = fullListString.subSequence(numbersCount + 2, fullListString.length)
                     val subs = findElements(text)
                     val element = Element.OrderedListItem(order.toString(), text, subs)
