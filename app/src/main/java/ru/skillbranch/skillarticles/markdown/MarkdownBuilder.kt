@@ -108,7 +108,6 @@ class MarkdownBuilder(context: Context) {
                         append(element.text)
                     }
                 }
-
                 is Element.OrderedListItem -> {
                     inSpans(OrderedListSpan(gap, element.order, colorOnSurface)) {
                         for (child in element.elements) {
@@ -116,7 +115,11 @@ class MarkdownBuilder(context: Context) {
                         }
                     }
                 }
-                else -> append(element.text)
+                is Element.BlockCode -> {
+                    inSpans(BlockCodeSpan(colorOnSurface, colorSurface, cornerRadius, gap, element.type)) {
+                        append(element.text)
+                    }
+                }
             }
         }
     }
