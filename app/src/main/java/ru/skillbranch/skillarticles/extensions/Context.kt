@@ -1,9 +1,13 @@
 package ru.skillbranch.skillarticles.extensions
 
+import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.util.TypedValue
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
+import androidx.core.content.getSystemService
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.ui.delegates.AttrValue
 
@@ -34,6 +38,12 @@ fun Context.attrValue(@AttrRes res: Int): Int {
     return if (theme.resolveAttribute(res, tv, true)) tv.data
     else throw Resources.NotFoundException("Resource with id $res not found")
 }
+
+fun Context.hideKeyBoard(view: View) {
+    val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(view.windowToken, 0)
+}
+
 
 //val Context.isNetworkAvailable: Boolean
 //    get() {
