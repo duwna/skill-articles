@@ -16,7 +16,8 @@ import ru.skillbranch.skillarticles.extensions.dpToIntPx
 @SuppressLint("ViewConstructor")
 class MarkdownTextView constructor(
     context: Context,
-    fontSize: Float
+    fontSize: Float,
+    helper: SearchBgHelper? = null
 ) : AppCompatTextView(context, null, 0), IMarkdownView {
 
     override var fontSize = fontSize
