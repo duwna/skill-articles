@@ -164,7 +164,7 @@ class MarkdownImageView private constructor(
         usedHeight += iv_image.measuredHeight
         usedHeight += titleTopMargin
         linePositionY = usedHeight + tv_title.measuredHeight / 2f
-        usedHeight += iv_image.measuredHeight
+        usedHeight += tv_title.measuredHeight
 
         setMeasuredDimension(width, usedHeight)
     }

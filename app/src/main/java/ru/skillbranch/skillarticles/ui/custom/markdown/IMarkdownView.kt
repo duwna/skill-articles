@@ -2,7 +2,6 @@ package ru.skillbranch.skillarticles.ui.custom.markdown
 
 import android.text.Spannable
 import android.text.SpannableString
-import android.util.Log
 import androidx.core.text.getSpans
 import ru.skillbranch.skillarticles.ui.custom.spans.SearchFocusSpan
 import ru.skillbranch.skillarticles.ui.custom.spans.SearchSpan
@@ -19,23 +18,16 @@ interface IMarkdownView {
         val offsetResult = results.map { (start, end) ->
             start.minus(offset) to end.minus(offset)
         }
-
-        offsetResult.forEach { (start, end) ->
-            try {
+        try {
+            offsetResult.forEach { (start, end) ->
                 spannableContent.setSpan(
                     SearchSpan(),
                     start,
                     end,
                     SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
-            } catch (e: IndexOutOfBoundsException) {
-                Log.d("!!!!!!!!!!!!!!!", """
-                    length = ${spannableContent.length}
-                    start = $start
-                    end = $end
-                    offset = $offset 
-                    """.trimIndent())
             }
+        } catch (e: IndexOutOfBoundsException) {
         }
     }
 
