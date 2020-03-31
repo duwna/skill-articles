@@ -37,7 +37,7 @@ class SearchBgHelper(
     private val alphaColor = ColorUtils.setAlphaComponent(secondaryColor, 160)
 
     private val drawable: Drawable by lazy {
-        GradientDrawable().apply {
+        mockDrawable ?: GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadii = FloatArray(8) { radius }//.apply { fill(radius, 0, size) }
             color = ColorStateList.valueOf(alphaColor)
@@ -46,7 +46,7 @@ class SearchBgHelper(
     }
 
     private val drawableLeft: Drawable by lazy {
-        GradientDrawable().apply {
+        mockDrawable ?: GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadii = floatArrayOf(
                 radius, radius, // top left
@@ -60,7 +60,7 @@ class SearchBgHelper(
     }
 
     private val drawableMiddle: Drawable by lazy {
-        GradientDrawable().apply {
+        mockDrawable ?: GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             color = ColorStateList.valueOf(alphaColor)
             setStroke(borderWidth, secondaryColor)
@@ -68,7 +68,7 @@ class SearchBgHelper(
     }
 
     private val drawableRight: Drawable by lazy {
-        GradientDrawable().apply {
+        mockDrawable ?: GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadii = floatArrayOf(
                 0f, 0f,
@@ -190,7 +190,7 @@ class SingleLineRender(
         bottomExtraPadding: Int
     ) {
         lineTop = getLineTop(layout, startLine) + topExtraPadding
-        lineBottom = getLineBottom(layout, endLine) - bottomExtraPadding
+        lineBottom = getLineBottom(layout, startLine) - bottomExtraPadding
         drawable.setBounds(startOffset - padding, lineTop, endOffset + padding, lineBottom)
         drawable.draw(canvas)
     }

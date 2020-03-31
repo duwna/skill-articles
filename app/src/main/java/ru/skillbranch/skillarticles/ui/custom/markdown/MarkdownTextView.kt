@@ -34,7 +34,7 @@ class MarkdownTextView constructor(
     override val spannableContent: Spannable
         get() = text as Spannable
 
-    private val searchBgHelper = SearchBgHelper(context) { top, bottom ->
+    private val searchBgHelper = helper ?: SearchBgHelper(context) { top, bottom ->
         focusRect.set(
             0,
             top - context.dpToIntPx(56),
