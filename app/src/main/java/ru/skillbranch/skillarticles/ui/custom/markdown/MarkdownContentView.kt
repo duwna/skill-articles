@@ -1,10 +1,14 @@
 package ru.skillbranch.skillarticles.ui.custom.markdown
 
 import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
 import android.util.AttributeSet
+import android.util.SparseArray
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.view.children
+import androidx.core.view.isVisible
 import ru.skillbranch.skillarticles.data.repositories.MarkdownElement
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.extensions.groupByBounds
@@ -156,5 +160,63 @@ class MarkdownContentView @JvmOverloads constructor(
     fun setCopyListener(listener: (String) -> Unit) {
         children.filterIsInstance<MarkdownCodeView>()
             .forEach { it.copyListener = listener }
+    }
+
+    public override fun onSaveInstanceState(): Parcelable? {
+        val state = SavedState(super.onSaveInstanceState())
+        children.forEach { view ->
+            when (view) {
+                is MarkdownCodeView -> state.saveState(indexOfChild(view), view.savingProp)
+                is MarkdownImageView -> state.saveState(
+                    indexOfChild(view),
+                    view.tv_alt?.isVisible ?: false
+                )
+            }
+        }
+        return state
+    }
+
+    public override fun onRestoreInstanceState(state: Parcelable) {
+        super.onRestoreInstanceState(state)
+        if (state is SavedState) {
+            children.forEach { view ->
+                when (view) {
+                    is MarkdownCodeView -> view.savingProp =
+                        state.restoreState(indexOfChild(view)) ?: false
+                    is MarkdownImageView -> view.tv_alt?.isVisible =
+                        state.restoreState(indexOfChild(view)) ?: false
+                }
+            }
+        }
+    }
+
+
+    private class SavedState : BaseSavedState, Parcelable {
+        private var sparseArray: SparseArray<Boolean>? = null
+
+        constructor(superState: Parcelable?) : super(superState)
+
+        constructor(src: Parcel) : super(src) {
+            sparseArray = src.readSparseArray(javaClass.classLoader)
+        }
+
+        fun saveState(id: Int, value: Boolean) {
+            if (sparseArray == null) sparseArray = SparseArray()
+            sparseArray?.put(id, value)
+        }
+
+        fun restoreState(id: Int): Boolean? {
+            return sparseArray?.get(id)
+        }
+
+        override fun writeToParcel(dst: Parcel, flags: Int) {
+            super.writeToParcel(dst, flags)
+            dst.writeSparseArray(sparseArray)
+        }
+
+        companion object CREATOR : Parcelable.Creator<SavedState> {
+            override fun createFromParcel(parcel: Parcel) = SavedState(parcel)
+            override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
+        }
     }
 }

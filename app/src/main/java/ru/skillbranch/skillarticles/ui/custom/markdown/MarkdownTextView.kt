@@ -7,6 +7,7 @@ import android.graphics.Rect
 import android.text.Spannable
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import ru.skillbranch.skillarticles.R
@@ -14,6 +15,7 @@ import ru.skillbranch.skillarticles.extensions.attrValue
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 
 @SuppressLint("ViewConstructor")
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 class MarkdownTextView constructor(
     context: Context,
     fontSize: Float,
@@ -32,7 +34,6 @@ class MarkdownTextView constructor(
     override val spannableContent: Spannable
         get() = text as Spannable
 
-    @SuppressLint("VisibleForTests")
     private val searchBgHelper = SearchBgHelper(context) { top, bottom ->
         focusRect.set(
             0,
@@ -49,7 +50,6 @@ class MarkdownTextView constructor(
         movementMethod = LinkMovementMethod.getInstance()
     }
 
-    @SuppressLint("VisibleForTests")
     override fun onDraw(canvas: Canvas) {
         if (text is Spanned && layout != null) {
             canvas.withTranslation(totalPaddingLeft.toFloat(), totalPaddingTop.toFloat()) {

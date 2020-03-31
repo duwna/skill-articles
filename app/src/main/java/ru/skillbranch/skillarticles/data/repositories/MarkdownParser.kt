@@ -204,7 +204,7 @@ object MarkdownParser {
                     text = string.subSequence(startIndex, endIndex)
                     val (alt, url, title) = "^!\\[([^\\[\\]]*?)?]\\((.*?) \"(.*?)\"\\)"
                         .toRegex().find(text)!!.destructured
-                    val element = Element.Image(url, alt, title)
+                    val element = Element.Image(url, if (alt.isBlank()) null else alt, title)
                     parents.add(element)
                     lastStartIndex = endIndex
                 }

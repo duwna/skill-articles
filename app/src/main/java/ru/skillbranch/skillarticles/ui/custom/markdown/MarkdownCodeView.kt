@@ -7,7 +7,6 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.text.Selection
 import android.text.Spannable
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.HorizontalScrollView
@@ -37,6 +36,14 @@ class MarkdownCodeView private constructor(
         get() = tv_codeView.text as Spannable
 
     var copyListener: ((String) -> Unit)? = null
+
+    var savingProp: Boolean
+        get() = isDark
+        set(value) {
+            isManual = true
+            isDark = value
+            applyColors()
+        }
 
     private lateinit var codeString: CharSequence
 
@@ -73,15 +80,16 @@ class MarkdownCodeView private constructor(
     private val scrollBarHeight = context.dpToIntPx(2)
 
     //for layout
-    private var isSingleLine = false
     private var isDark = false
-    private var isManual = false
+    private var isSingleLine = false
+    var isManual = false
     private val bgColor
         get() = when {
             !isManual -> context.attrValue(R.attr.colorSurface)
             isDark -> darkSurface
             else -> lightSurface
         }
+
     private val textColor
         get() = when {
             !isManual -> context.attrValue(R.attr.colorOnSurface)

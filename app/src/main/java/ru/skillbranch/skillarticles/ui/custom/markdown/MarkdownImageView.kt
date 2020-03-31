@@ -1,7 +1,5 @@
 package ru.skillbranch.skillarticles.ui.custom.markdown
 
-//import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-//import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
@@ -137,9 +135,8 @@ class MarkdownImageView private constructor(
                 setPadding(titleTopMargin)
                 isVisible = false
             }
+            addView(tv_alt)
         }
-
-        addView(tv_alt)
 
         iv_image.setOnClickListener {
             if (tv_alt?.isVisible == true) animateHideAlt()
@@ -220,6 +217,7 @@ class MarkdownImageView private constructor(
     }
 
     private fun animateShowAlt() {
+        tv_alt ?: return
         tv_alt?.isVisible = true
         val endRadius = hypot(tv_alt?.width?.toFloat() ?: 0f, tv_alt?.height?.toFloat() ?: 0f)
         val va = ViewAnimationUtils.createCircularReveal(
@@ -233,6 +231,7 @@ class MarkdownImageView private constructor(
     }
 
     private fun animateHideAlt() {
+        tv_alt ?: return
         val endRadius = hypot(tv_alt?.width?.toFloat() ?: 0f, tv_alt?.height?.toFloat() ?: 0f)
         val va = ViewAnimationUtils.createCircularReveal(
             tv_alt,
@@ -244,6 +243,7 @@ class MarkdownImageView private constructor(
         va.doOnEnd { tv_alt?.isVisible = false }
         va.start()
     }
+
 }
 
 class AspectRatioResizeTransform : BitmapTransformation() {
