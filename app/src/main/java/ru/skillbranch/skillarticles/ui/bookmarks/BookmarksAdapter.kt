@@ -1,4 +1,4 @@
-package ru.skillbranch.skillarticles.ui.articles
+package ru.skillbranch.skillarticles.ui.bookmarks
 
 import android.view.View
 import android.view.ViewGroup
@@ -9,24 +9,24 @@ import kotlinx.android.extensions.LayoutContainer
 import ru.skillbranch.skillarticles.data.models.ArticleItemData
 import ru.skillbranch.skillarticles.ui.custom.ArticleItemView
 
-class ArticlesAdapter(
+class BookmarksAdapter(
     private val listener: (ArticleItemData) -> Unit,
     private val toggleBookmarkListener: (String, Boolean) -> Unit
 ) :
-    PagedListAdapter<ArticleItemData, ArticleVH>(ArticleDiffCallback()) {
+    PagedListAdapter<ArticleItemData, BookmarkVH>(BookmarksDiffCallback()) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ArticleVH {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookmarkVH {
         val containerView = ArticleItemView(parent.context)
-        return ArticleVH(containerView)
+        return BookmarkVH(containerView)
     }
 
-    override fun onBindViewHolder(holder: ArticleVH, position: Int) {
+    override fun onBindViewHolder(holder: BookmarkVH, position: Int) {
         holder.bind(getItem(position), listener, toggleBookmarkListener)
     }
 
 }
 
-class ArticleDiffCallback : DiffUtil.ItemCallback<ArticleItemData>() {
+class BookmarksDiffCallback : DiffUtil.ItemCallback<ArticleItemData>() {
     override fun areItemsTheSame(oldItem: ArticleItemData, newItem: ArticleItemData): Boolean {
         return oldItem.id == newItem.id
     }
@@ -36,7 +36,7 @@ class ArticleDiffCallback : DiffUtil.ItemCallback<ArticleItemData>() {
     }
 }
 
-class ArticleVH(
+class BookmarkVH(
     override val containerView: View
 ) : RecyclerView.ViewHolder(containerView), LayoutContainer {
     fun bind(

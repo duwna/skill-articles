@@ -46,10 +46,8 @@ class RootActivity : BaseActivity<RootViewModel>() {
         }
 
         navController.addOnDestinationChangedListener { controller, destination, arguments ->
-            nav_view.menu.children.forEach { item->
-                Log.e(RootActivity::class.java.simpleName, "${item.title} - ${item.isChecked}")
-            }
-            nav_view.selectDestination(destination)
+             nav_view.selectDestination(destination)
+
         }
     }
 

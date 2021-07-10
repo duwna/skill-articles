@@ -7,9 +7,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
-import androidx.core.content.getSystemService
 import ru.skillbranch.skillarticles.R
-import ru.skillbranch.skillarticles.ui.delegates.AttrValue
 
 fun Context.dpToPx(dp: Int): Float {
     return TypedValue.applyDimension(
@@ -39,11 +37,15 @@ fun Context.attrValue(@AttrRes res: Int): Int {
     else throw Resources.NotFoundException("Resource with id $res not found")
 }
 
-fun Context.hideKeyBoard(view: View) {
+fun Context.hideKeyboard(view: View) {
     val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     imm.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
+fun Context.showKeyboard(view: View) {
+    val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+}
 
 //val Context.isNetworkAvailable: Boolean
 //    get() {

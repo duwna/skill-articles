@@ -107,9 +107,9 @@ class ToolbarBuilder {
 
     fun build(context: FragmentActivity) {
 
-        context.appbar.setExpanded(true, true)
+        context.appbar?.setExpanded(true, true)
 
-        with(context.toolbar) {
+        context.toolbar?.run {
             if (this@ToolbarBuilder.title != null) title = this@ToolbarBuilder.title
             subtitle = this@ToolbarBuilder.subtitle
             if (this@ToolbarBuilder.logo != null) {
@@ -186,7 +186,7 @@ class BottombarBuilder() {
             }
         }
 
-        with(context.nav_view) {
+        context.nav_view?.run {
             isVisible = visible
             ((layoutParams as CoordinatorLayout.LayoutParams)
                 .behavior as HideBottomViewOnScrollBehavior).slideUp(this)
