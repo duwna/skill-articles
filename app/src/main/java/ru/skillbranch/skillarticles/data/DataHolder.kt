@@ -31,12 +31,6 @@ object LocalDataHolder {
         return localArticles[articleId]!!
     }
 
-    fun handleBookmark(id: String, isBookmark: Boolean) {
-        localArticleItems.indexOfFirst { it.id == id }.also { index ->
-            localArticleItems[index] = localArticleItems[index].copy(isBookmark = !isBookmark)
-        }
-    }
-
     fun findArticlePersonalInfo(articleId: String): LiveData<ArticlePersonalInfo?> {
         GlobalScope.launch {
             delay(500)

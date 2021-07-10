@@ -26,7 +26,7 @@ object ArticlesRepository {
         )
     }
 
-    fun bookmarkArticles() : ArticlesDataFactory{
+    fun bookmarkArticles(): ArticlesDataFactory {
         return ArticlesDataFactory(ArticleStrategy.BookmarkArticles(::findBookmarkArticlesByRange))
     }
 
@@ -40,7 +40,10 @@ object ArticlesRepository {
     }
 
     fun updateBookmark(id: String, isChecked: Boolean) {
-        local.handleBookmark(id, isChecked)
+        local.localArticleItems.indexOfFirst { it.id == id }.also { index ->
+            local.localArticleItems[index] =
+                local.localArticleItems[index].copy(isBookmark = !isChecked)
+        }
     }
 
     private fun findArticlesByRange(start: Int, size: Int): List<ArticleItemData> {
