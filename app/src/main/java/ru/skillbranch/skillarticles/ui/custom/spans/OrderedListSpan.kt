@@ -8,6 +8,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.Px
 import androidx.annotation.VisibleForTesting
 
+
 class OrderedListSpan(
     @Px
     private val gapWidth: Float,
@@ -18,7 +19,7 @@ class OrderedListSpan(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 
     override fun getLeadingMargin(first: Boolean): Int {
-        return gapWidth.toInt() * order.length.inc()
+        return (order.length.inc() * gapWidth).toInt()
     }
 
     override fun drawLeadingMargin(
@@ -26,20 +27,25 @@ class OrderedListSpan(
         lineTop: Int, lineBaseline: Int, lineBottom: Int, text: CharSequence?, lineStart: Int,
         lineEnd: Int, isFirstLine: Boolean, layout: Layout?
     ) {
-        if (isFirstLine) paint.withCustomColor {
-            canvas.drawText(
-                order,
-                currentMarginLocation + gapWidth,
-                lineBaseline.toFloat(),
-                paint
-            )
+        if (isFirstLine) {
+            paint.withCustomColor {
+                canvas.drawText(
+                    order,
+                    currentMarginLocation + gapWidth,
+                    lineBaseline.toFloat(),
+                    paint
+                )
+            }
         }
     }
 
     private inline fun Paint.withCustomColor(block: () -> Unit) {
         val oldColor = color
+
         color = orderColor
+
         block()
+
         color = oldColor
     }
 }

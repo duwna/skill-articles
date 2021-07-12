@@ -20,17 +20,34 @@ class Bottombar @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : ConstraintLayout(context, attrs, defStyleAttr), CoordinatorLayout.AttachedBehavior {
-
     var isSearchMode = false
 
+    override fun getBehavior(): CoordinatorLayout.Behavior<Bottombar> {
+        return BottombarBehavior()
+    }
+
     init {
-//        View.inflate(context, R.layout.layout_bottombar, this)
         val materialBg = MaterialShapeDrawable.createWithElevationOverlay(context)
         materialBg.elevation = elevation
         background = materialBg
     }
 
-    override fun getBehavior(): CoordinatorLayout.Behavior<*> = BottombarBehavior()
+    //save state
+    override fun onSaveInstanceState(): Parcelable? {
+        val savedState = SavedState(super.onSaveInstanceState())
+        savedState.ssIsSearchMode = isSearchMode
+        return savedState
+    }
+
+    //restore state
+    override fun onRestoreInstanceState(state: Parcelable) {
+        super.onRestoreInstanceState(state)
+        if (state is SavedState) {
+            isSearchMode = state.ssIsSearchMode
+            reveal.isVisible = isSearchMode
+            group_bottom.isVisible = !isSearchMode
+        }
+    }
 
     fun setSearchState(search: Boolean) {
         if (isSearchMode == search || !isAttachedToWindow) return
@@ -72,41 +89,24 @@ class Bottombar @JvmOverloads constructor(
             tv_search_result.text = "Not found"
             btn_result_up.isEnabled = false
             btn_result_down.isEnabled = false
-        } else {
+        }else{
             tv_search_result.text = "${position.inc()} of $searchCount"
             btn_result_up.isEnabled = true
             btn_result_down.isEnabled = true
         }
 
         //lock button presses in min/max positions
-        when (position) {
+        when(position){
             0 -> btn_result_up.isEnabled = false
-            searchCount - 1 -> btn_result_down.isEnabled = false
+            searchCount -1 -> btn_result_down.isEnabled = false
         }
     }
 
-    //save state
-    override fun onSaveInstanceState(): Parcelable? {
-        val savedState = SavedState(super.onSaveInstanceState())
-        savedState.ssIsSearchMode = isSearchMode
-        return savedState
-    }
-
-    //restore state
-    override fun onRestoreInstanceState(state: Parcelable) {
-        super.onRestoreInstanceState(state)
-        if (state is SavedState) {
-            isSearchMode = state.ssIsSearchMode
-            reveal.isVisible = isSearchMode
-            group_bottom.isVisible = !isSearchMode
-        }
-    }
-
-    fun show() {
+    fun show(){
         ObjectAnimator.ofFloat(this, "translationY", 0f).start()
     }
 
-    fun hide() {
+    fun hide(){
         ObjectAnimator.ofFloat(this, "translationY", height.toFloat()).start()
     }
 
@@ -131,5 +131,4 @@ class Bottombar @JvmOverloads constructor(
             override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
         }
     }
-
 }

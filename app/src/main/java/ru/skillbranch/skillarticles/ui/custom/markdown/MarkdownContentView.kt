@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.AttributeSet
+import android.util.Log
 import android.util.SparseArray
 import android.view.View
 import android.view.ViewGroup
@@ -11,10 +12,12 @@ import android.widget.TextView
 import androidx.core.util.isEmpty
 import androidx.core.view.ViewCompat
 import androidx.core.view.children
+import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.data.repositories.MarkdownElement
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.extensions.groupByBounds
 import ru.skillbranch.skillarticles.extensions.setPaddingOptionally
+import ru.skillbranch.skillarticles.ui.custom.ShimmerDrawable
 import kotlin.properties.Delegates
 
 class MarkdownContentView @JvmOverloads constructor(
@@ -22,12 +25,8 @@ class MarkdownContentView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
-
     private lateinit var elements: List<MarkdownElement>
-    private var layoutManager = LayoutManager()
-
-    //for restore
-    private var ids = arrayListOf<Int>()
+    private var layoutManager: LayoutManager = LayoutManager()
 
     var textSize by Delegates.observable(14f) { _, old, value ->
         if (value == old) return@observable
@@ -36,14 +35,95 @@ class MarkdownContentView @JvmOverloads constructor(
             it.fontSize = value
         }
     }
-    var isLoading: Boolean = true
-    val padding = context.dpToIntPx(8)
+    var isLoading by Delegates.observable(false) { _, _, newValue ->
+        Log.e("MarkdownContentView", "isLoading : $newValue");
+        if (!newValue) hideShimmer()
+        else showShimmer()
+    }
+    private val defaultSpace = context.dpToIntPx(8)
+    private val defaultPadding = context.dpToIntPx(16)
+    private val lineHeight = context.dpToIntPx(14)
+    private val miniLineHeight = context.dpToIntPx(12)
+    private val shimmerWidth = resources.displayMetrics.widthPixels - context.dpToIntPx(32)
+
+    private val shimmerDrawable by lazy {
+        ShimmerDrawable.Builder()
+            .setShimmerWidth(shimmerWidth)
+            .addShape(
+                ShimmerDrawable.Shape.TextRow(
+                    shimmerWidth,
+                    6,
+                    lineHeight = lineHeight,
+                    lineSpace = defaultSpace,
+                    cornerRadius = defaultSpace,
+                    offset = defaultPadding to defaultPadding
+                )
+            )
+            .addShape(
+                ShimmerDrawable.Shape.ImagePlaceholder(
+                    shimmerWidth,
+                    16 / 9f,
+                    borderWidth = defaultSpace,
+                    cornerRadius = defaultSpace,
+                    offset = defaultPadding to defaultSpace
+                )
+            )
+            .addShape(
+                ShimmerDrawable.Shape.TextRow(
+                    shimmerWidth - 4 * defaultPadding,
+                    1,
+                    lineHeight = miniLineHeight,
+                    lineSpace = defaultSpace / 2,
+                    cornerRadius = defaultSpace,
+                    offset = 3 * defaultPadding to defaultSpace
+                )
+            )
+            .addShape(
+                ShimmerDrawable.Shape.TextRow(
+                    shimmerWidth,
+                    4,
+                    lineHeight = lineHeight,
+                    lineSpace = defaultSpace,
+                    cornerRadius = defaultSpace,
+                    offset = defaultPadding to defaultPadding
+                )
+            )
+            .addShape(
+                ShimmerDrawable.Shape.Rectangle(
+                    shimmerWidth ,
+                    context.dpToIntPx(56),
+                    cornerRadius = defaultSpace,
+                    offset = defaultPadding to defaultSpace
+                )
+            )
+            .addShape(
+                ShimmerDrawable.Shape.TextRow(
+                    shimmerWidth,
+                    4,
+                    lineHeight = lineHeight,
+                    lineSpace = defaultSpace,
+                    offset = defaultPadding to defaultPadding
+                )
+            )
+            .itemPatternCount(3)
+            .setBaseColor(context.getColor(R.color.color_gray_light))
+            .setHighlightColor(context.getColor(R.color.color_divider))
+            .build()
+    }
+
+    init {
+        addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
+            override fun onViewDetachedFromWindow(v: View?) {
+                shimmerDrawable.stop()
+            }
+
+            override fun onViewAttachedToWindow(v: View?) {/*nothing*/}
+        })
+    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         var usedHeight = paddingTop
         val width = getDefaultSize(suggestedMinimumWidth, widthMeasureSpec)
-
-        val notng = Unit
 
         children.forEach {
             measureChild(it, widthMeasureSpec, heightMeasureSpec)
@@ -51,7 +131,7 @@ class MarkdownContentView @JvmOverloads constructor(
         }
 
         usedHeight += paddingBottom
-        setMeasuredDimension(width, usedHeight)
+        setMeasuredDimension(width, if (usedHeight < minimumHeight) minimumHeight else usedHeight)
     }
 
 
@@ -88,16 +168,22 @@ class MarkdownContentView @JvmOverloads constructor(
             when (it) {
                 is MarkdownElement.Text -> {
                     val tv = MarkdownTextView(context, textSize).apply {
-                        setPaddingOptionally(left = padding, right = padding)
+                        setPaddingOptionally(
+                            left = defaultSpace,
+                            right = defaultSpace
+                        )
                         setLineSpacing(fontSize * 0.5f, 1f)
                     }
+
                     MarkdownBuilder(context)
                         .markdownToSpan(it)
                         .run {
                             tv.setText(this, TextView.BufferType.SPANNABLE)
                         }
+
                     addView(tv)
                 }
+
                 is MarkdownElement.Image -> {
                     val iv = MarkdownImageView(
                         context,
@@ -110,6 +196,7 @@ class MarkdownContentView @JvmOverloads constructor(
                     layoutManager.attachToParent(iv, index)
                     index++
                 }
+
                 is MarkdownElement.Scroll -> {
                     val sv = MarkdownCodeView(
                         context,
@@ -129,13 +216,16 @@ class MarkdownContentView @JvmOverloads constructor(
             view as IMarkdownView
             view.clearSearchResult()
         }
+
         if (searchResult.isEmpty()) return
 
         val bounds = elements.map { it.bounds }
         val result = searchResult.groupByBounds(bounds)
 
         children.forEachIndexed { index, view ->
-            (view as IMarkdownView).renderSearchResult(result[index], elements[index].offset)
+            view as IMarkdownView
+            //search for child with markdown element offset
+            view.renderSearchResult(result[index], elements[index].offset)
         }
     }
 
@@ -155,7 +245,6 @@ class MarkdownContentView @JvmOverloads constructor(
         val view = getChildAt(index)
         view as IMarkdownView
         view.renderSearchPosition(searchPosition, elements[index].offset)
-
     }
 
     fun clearSearchResult() {
@@ -170,31 +259,44 @@ class MarkdownContentView @JvmOverloads constructor(
             .forEach { it.copyListener = listener }
     }
 
-    public override fun onSaveInstanceState(): Parcelable? {
+    override fun onSaveInstanceState(): Parcelable? {
         val state = SavedState(super.onSaveInstanceState())
         state.layout = layoutManager
         return state
     }
 
-    public override fun onRestoreInstanceState(state: Parcelable) {
+    override fun onRestoreInstanceState(state: Parcelable?) {
         super.onRestoreInstanceState(state)
         if (state is SavedState) layoutManager = state.layout
     }
 
     override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>?) {
+        //save children manually without markdown text view
         children.filter { it !is MarkdownTextView }
             .forEach { it.saveHierarchyState(layoutManager.container) }
+        //save only markdownContentView
         dispatchFreezeSelfOnly(container)
     }
 
-    override fun isSaveEnabled(): Boolean = true
+    private fun hideShimmer() {
+//        shimmerDrawable.stop()
+        (foreground as? ShimmerDrawable)?.stop()
+        foreground = null
+    }
+
+    private fun showShimmer() {
+//        shimmerListener = doOnPreDraw {
+            foreground = shimmerDrawable
+            shimmerDrawable.start()
+//        }
+    }
 
     private class LayoutManager() : Parcelable {
-        var ids = mutableListOf<Int>()
-        var container = SparseArray<Parcelable>()
+        var ids: MutableList<Int> = mutableListOf()
+        var container: SparseArray<Parcelable> = SparseArray()
 
         constructor(parcel: Parcel) : this() {
-            ids = parcel.readArrayList(Int::class.java.classLoader) as ArrayList<Int>
+            ids = parcel.createIntArray()!!.toMutableList()
             container =
                 parcel.readSparseArray<Parcelable>(this::class.java.classLoader) as SparseArray<Parcelable>
         }
@@ -217,32 +319,34 @@ class MarkdownContentView @JvmOverloads constructor(
         override fun describeContents(): Int = 0
 
         companion object CREATOR : Parcelable.Creator<LayoutManager> {
-            override fun createFromParcel(parcel: Parcel) = LayoutManager(parcel)
+            override fun createFromParcel(parcel: Parcel): LayoutManager = LayoutManager(parcel)
             override fun newArray(size: Int): Array<LayoutManager?> = arrayOfNulls(size)
-        }
 
+        }
     }
 
-
     private class SavedState : BaseSavedState, Parcelable {
-
         lateinit var layout: LayoutManager
 
         constructor(superState: Parcelable?) : super(superState)
 
+        @Suppress("UNCHECKED_CAST")
         constructor(src: Parcel) : super(src) {
+            //restore state from parcel
             layout = src.readParcelable(LayoutManager::class.java.classLoader)!!
         }
 
         override fun writeToParcel(dst: Parcel, flags: Int) {
+            //write state to parcel
             super.writeToParcel(dst, flags)
             dst.writeParcelable(layout, flags)
         }
 
-        override fun describeContents(): Int = 0
+        override fun describeContents() = 0
 
         companion object CREATOR : Parcelable.Creator<SavedState> {
             override fun createFromParcel(parcel: Parcel) = SavedState(parcel)
+
             override fun newArray(size: Int): Array<SavedState?> = arrayOfNulls(size)
         }
     }

@@ -5,10 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
-import ru.skillbranch.skillarticles.data.*
+import ru.skillbranch.skillarticles.data.LocalDataHolder
+import ru.skillbranch.skillarticles.data.NetworkDataHolder
 import ru.skillbranch.skillarticles.data.models.*
+import java.lang.Thread.sleep
 import kotlin.math.abs
-
 
 object ArticleRepository {
     private val local = LocalDataHolder
@@ -40,9 +41,12 @@ object ArticleRepository {
 
     fun isAuth(): MutableLiveData<Boolean> = local.isAuth()
 
-    fun allComments(articleId: String, totalCount: Int) = CommentsDataFactory(
-        ::loadCommentsByRange, articleId, totalCount
-    )
+    fun allComments(articleId: String, totalCount: Int) =
+        CommentsDataFactory(
+            itemProvider = ::loadCommentsByRange,
+            articleId = articleId,
+            totalCount = totalCount
+        )
 
     private fun loadCommentsByRange(
         slug: String?,
@@ -52,24 +56,27 @@ object ArticleRepository {
         val data = network.commentsData.getOrElse(articleId) { mutableListOf() }
         return when {
             slug == null -> data.take(size)
+
             size > 0 -> data.dropWhile { it.slug != slug }
                 .drop(1)
                 .take(size)
-            size < 0 -> data.dropLastWhile { it.slug != slug }
+
+            size < 0 -> data
+                .dropLastWhile { it.slug != slug }
                 .dropLast(1)
                 .takeLast(abs(size))
+
             else -> emptyList()
-        }
+        }.apply { sleep(1500) }
     }
 
     fun sendComment(articleId: String, comment: String, answerToSlug: String?) {
         network.sendMessage(
             articleId, comment, answerToSlug,
-            User("111", "John Doe", "")
+            User("777", "John Doe", "https://skill-branch.ru/img/mail/bot/android-category.png")
         )
         local.incrementCommentsCount(articleId)
     }
-
 }
 
 class CommentsDataFactory(
@@ -77,9 +84,9 @@ class CommentsDataFactory(
     private val articleId: String,
     private val totalCount: Int
 ) : DataSource.Factory<String?, CommentItemData>() {
-    override fun create(): DataSource<String?, CommentItemData> {
-        return CommentsDataSource(itemProvider, articleId, totalCount)
-    }
+    override fun create(): DataSource<String?, CommentItemData> =
+        CommentsDataSource(itemProvider, articleId, totalCount)
+
 }
 
 class CommentsDataSource(
@@ -87,16 +94,18 @@ class CommentsDataSource(
     private val articleId: String,
     private val totalCount: Int
 ) : ItemKeyedDataSource<String, CommentItemData>() {
-    override fun getKey(item: CommentItemData): String {
-        return item.slug
-    }
 
     override fun loadInitial(
         params: LoadInitialParams<String>,
         callback: LoadInitialCallback<CommentItemData>
     ) {
         val result = itemProvider(params.requestedInitialKey, params.requestedLoadSize, articleId)
-        callback.onResult(if (totalCount > 0) result else emptyList(), 0, totalCount)
+
+        callback.onResult(
+            if (totalCount > 0) result else emptyList(),
+            0,
+            totalCount
+        )
     }
 
     override fun loadAfter(params: LoadParams<String>, callback: LoadCallback<CommentItemData>) {
@@ -108,5 +117,7 @@ class CommentsDataSource(
         val result = itemProvider(params.key, -params.requestedLoadSize, articleId)
         callback.onResult(result)
     }
+
+    override fun getKey(item: CommentItemData): String = item.slug
 
 }

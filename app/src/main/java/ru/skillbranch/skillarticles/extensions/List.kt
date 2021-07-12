@@ -1,13 +1,40 @@
 package ru.skillbranch.skillarticles.extensions
 
-fun List<Pair<Int, Int>>.groupByBounds(bounds: List<Pair<Int, Int>>): List<MutableList<Pair<Int, Int>>> =
-    bounds.map { bound ->
-        this.filter { it.second > bound.first && it.first < bound.second }
-            .map { searchPosition ->
-                when {
-                    searchPosition.first < bound.first -> bound.first to searchPosition.second
-                    searchPosition.second > bound.second -> searchPosition.first to bound.second
-                    else -> searchPosition
+fun List<Pair<Int, Int>>.groupByBounds(bounds: List<Pair<Int, Int>>): List<List<Pair<Int, Int>>> {
+
+    val results= List<MutableList<Pair<Int, Int>>>(bounds.size){mutableListOf()}
+
+    var lastResult = 0
+
+    bounds@ for ((index, bound) in bounds.withIndex()) {
+        var lastIndex = bound.first
+        results@ for (result in subList(lastResult, size)) {
+            val boundRange = lastIndex..bound.second
+
+            when {
+                result.first in boundRange && result.second in boundRange -> {
+                        results[index].add(result.first to result.second)
+                        lastResult++
+                        lastIndex = result.second
                 }
-            }.toMutableList()
+
+                result.first in boundRange && result.second !in boundRange -> {
+                    if(result.first != bound.second){
+                        results[index].add(result.first to bound.second)
+                    }
+                    continue@bounds
+                }
+
+                result.first !in boundRange && result.second in boundRange -> {
+                    if(bound.first != result.second){
+                        results[index].add(bound.first to result.second)
+                    }
+                    lastResult++
+                    continue@results
+                }
+            }
+        }
     }
+
+    return results
+}

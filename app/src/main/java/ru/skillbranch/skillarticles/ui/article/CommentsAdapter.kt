@@ -9,34 +9,26 @@ import ru.skillbranch.skillarticles.data.models.CommentItemData
 import ru.skillbranch.skillarticles.ui.custom.CommentItemView
 
 class CommentsAdapter(private val listener: (CommentItemData) -> Unit) :
-    PagedListAdapter<CommentItemData, CommentVH>(CommentsDiffCallback()) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentVH {
-        val commentItemView = CommentItemView(parent.context)
-        return CommentVH(commentItemView, listener)
-    }
+    PagedListAdapter<CommentItemData, CommentVH>(CommentDiffCallback()) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentVH = CommentVH(CommentItemView(parent.context), listener)
 
     override fun onBindViewHolder(holder: CommentVH, position: Int) {
         holder.bind(getItem(position))
     }
-
 }
 
-class CommentVH(containerView: View, val listener: (CommentItemData) -> Unit) :
+class CommentVH(private val containerView: View, val listener: (CommentItemData) -> Unit) :
     RecyclerView.ViewHolder(containerView) {
     fun bind(item: CommentItemData?) {
-        if (item != null) {
-            itemView.setOnClickListener { listener(item) }
-            (itemView as CommentItemView).bind(item)
-        }
+        (containerView as CommentItemView).bind(item)
+        if (item != null) itemView.setOnClickListener { listener(item) }
     }
 }
 
-class CommentsDiffCallback() : DiffUtil.ItemCallback<CommentItemData>() {
-    override fun areItemsTheSame(oldItem: CommentItemData, newItem: CommentItemData): Boolean {
-        return oldItem.id == newItem.id
-    }
+class CommentDiffCallback() : DiffUtil.ItemCallback<CommentItemData>() {
+    override fun areItemsTheSame(oldItem: CommentItemData, newItem: CommentItemData): Boolean =
+        oldItem.id == newItem.id
 
-    override fun areContentsTheSame(oldItem: CommentItemData, newItem: CommentItemData): Boolean {
-        return oldItem == newItem
-    }
+    override fun areContentsTheSame(oldItem: CommentItemData, newItem: CommentItemData): Boolean =
+        oldItem == newItem
 }

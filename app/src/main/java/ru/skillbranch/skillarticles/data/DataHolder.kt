@@ -1,6 +1,5 @@
 package ru.skillbranch.skillarticles.data
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import kotlinx.coroutines.GlobalScope
@@ -20,13 +19,8 @@ object LocalDataHolder {
 
     fun findArticle(articleId: String): LiveData<ArticleData?> {
         if (localArticles[articleId] == null) {
-            Log.e("DataHolder", "findArticle $articleId: ")
             val article = localArticleItems.find { it.id == articleId }
-            localArticles[articleId] = MutableLiveData(
-                EntityGenerator.generateArticle(
-                    article ?: EntityGenerator.createArticleItem(articleId)
-                )
-            )
+            localArticles[articleId] = MutableLiveData(EntityGenerator.generateArticle(article ?: EntityGenerator.createArticleItem(articleId)))
         }
         return localArticles[articleId]!!
     }
@@ -34,8 +28,7 @@ object LocalDataHolder {
     fun findArticlePersonalInfo(articleId: String): LiveData<ArticlePersonalInfo?> {
         GlobalScope.launch {
             delay(500)
-            val article = localArticleItems.find { it.id == articleId }
-            articleInfo.postValue(ArticlePersonalInfo(isBookmark = article?.isBookmark ?: false))
+            articleInfo.postValue(ArticlePersonalInfo(isBookmark = true))
         }
         return articleInfo
     }
@@ -75,6 +68,7 @@ object NetworkDataHolder {
     fun loadArticleContent(articleId: String): LiveData<String?> {
         val content = MutableLiveData<String?>(null)
         GlobalScope.launch {
+            delay(1500)
             val s = articlesContent[articleId.toInt() % 6]
             content.postValue(s)
         }
@@ -85,8 +79,7 @@ object NetworkDataHolder {
         val mutableList =
             commentsData[articleId] ?: error("Comments for article id : $articleId not found")
         val index =
-            if (answerToSlug == null) 0 else mutableList.indexOfFirst { it.slug == answerToSlug }
-                .inc()
+            if (answerToSlug == null) 0 else mutableList.indexOfFirst { it.slug == answerToSlug }.inc()
         val mess = mutableList.getOrNull(index.dec())
         val id = "${mutableList.size}"
         mutableList.add(

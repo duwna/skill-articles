@@ -6,7 +6,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.*
 import androidx.navigation.NavOptions
 import androidx.navigation.Navigator
-import ru.skillbranch.skillarticles.viewmodels.RootState
 
 abstract class BaseViewModel<T : IViewModelState>(
     private val handleState: SavedStateHandle,
@@ -14,7 +13,6 @@ abstract class BaseViewModel<T : IViewModelState>(
 ) : ViewModel() {
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     val notifications = MutableLiveData<Event<Notify>>()
-
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     val navigation = MutableLiveData<Event<NavigationCommand>>()
 
@@ -41,7 +39,7 @@ abstract class BaseViewModel<T : IViewModelState>(
      * модифицированное состояние, которое присваивается текущему состоянию
      */
     @UiThread
-    protected inline fun updateState(update: (currentState: T) -> T) {
+    inline fun updateState(update: (currentState: T) -> T) {
         val updatedState: T = update(currentState)
         state.value = updatedState
     }
@@ -53,8 +51,7 @@ abstract class BaseViewModel<T : IViewModelState>(
      */
     @UiThread
     protected fun notify(content: Notify) {
-        notifications.value =
-            Event(content)
+        notifications.value = Event(content)
     }
 
     open fun navigate(command: NavigationCommand) {
@@ -67,6 +64,7 @@ abstract class BaseViewModel<T : IViewModelState>(
      */
     fun observeState(owner: LifecycleOwner, onChanged: (newState: T) -> Unit) {
         state.observe(owner, Observer { onChanged(it!!) })
+
     }
 
     /***
@@ -75,11 +73,13 @@ abstract class BaseViewModel<T : IViewModelState>(
      * реализует данное поведение с помощью EventObserver
      */
     fun observeNotifications(owner: LifecycleOwner, onNotify: (notification: Notify) -> Unit) {
-        notifications.observe(owner, EventObserver { onNotify(it) })
+        notifications.observe(owner,
+            EventObserver { onNotify(it) })
     }
 
     fun observeNavigation(owner: LifecycleOwner, onNavigate: (command: NavigationCommand) -> Unit) {
-        navigation.observe(owner, EventObserver { onNavigate(it) })
+        navigation.observe(owner,
+            EventObserver { onNavigate(it) })
     }
 
     /***
@@ -96,14 +96,17 @@ abstract class BaseViewModel<T : IViewModelState>(
         }
     }
 
-    fun saveState() {
+    open fun saveState() {
         currentState.save(handleState)
     }
 
     @Suppress("UNCHECKED_CAST")
     fun restoreState() {
+        val restoredState = currentState.restore(handleState) as T
+        if(currentState == restoredState) return
         state.value = currentState.restore(handleState) as T
     }
+
 }
 
 class Event<out E>(private val content: E) {
@@ -138,7 +141,7 @@ class EventObserver<E>(private val onEventUnhandledContent: (E) -> Unit) : Obser
     }
 }
 
-sealed class Notify {
+sealed class Notify() {
     abstract val message: String
 
     data class TextMessage(override val message: String) : Notify()
@@ -156,8 +159,7 @@ sealed class Notify {
     ) : Notify()
 }
 
-sealed class NavigationCommand {
-
+sealed class NavigationCommand() {
     data class To(
         val destination: Int,
         val args: Bundle? = null,

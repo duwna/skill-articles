@@ -1,5 +1,6 @@
 package ru.skillbranch.skillarticles.viewmodels.articles
 
+import android.util.Log
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors
 
 class ArticlesViewModel(handle: SavedStateHandle) :
     BaseViewModel<ArticlesState>(handle, ArticlesState()) {
+    private val repository = ArticlesRepository
     private val listConfig by lazy {
         PagedList.Config.Builder()
             .setEnablePlaceholders(false)
@@ -25,45 +27,50 @@ class ArticlesViewModel(handle: SavedStateHandle) :
             .setInitialLoadSizeHint(50)
             .build()
     }
-    private val repository = ArticlesRepository
+    private val listData = Transformations.switchMap(state) {
+        val searchFn = if (!it.isBookmark) repository::searchArticles
+        else repository::searchBookmarkedArticles
 
-    private val listData: LiveData<PagedList<ArticleItemData>> = Transformations.switchMap(state) {
+        val defaultFn = if (!it.isBookmark) repository::allArticles
+        else repository::allBookmarked
+
         when {
-            it.isSearch && !it.searchQuery.isNullOrBlank() ->
-                buildPagedList(repository.searchArticles(it.searchQuery))
-            else -> buildPagedList(repository.allArticles())
+            it.isSearch && !it.searchQuery.isNullOrBlank() -> buildPagedList(
+                searchFn(it.searchQuery)
+            )
+            else -> buildPagedList(defaultFn())
         }
     }
 
-    fun observeList(owner: LifecycleOwner, onChange: (list: PagedList<ArticleItemData>) -> Unit) {
-        listData.observe(owner, onChange)
+    fun observeList(
+        owner: LifecycleOwner,
+        isBookmark: Boolean = false,
+        onChange: (list: PagedList<ArticleItemData>) -> Unit
+    ) {
+        updateState { it.copy(isBookmark = isBookmark) }
+        listData.observe(owner, Observer { onChange(it) })
     }
 
-    fun handleSearchMode(isSearch: Boolean) {
-        updateState { it.copy(isSearch = isSearch) }
-    }
+    private fun buildPagedList(
+        dataFactory: ArticlesDataFactory
+    ): LiveData<PagedList<ArticleItemData>> {
+        val builder = LivePagedListBuilder<Int, ArticleItemData>(
+            dataFactory,
+            listConfig
+        )
 
-    fun handleQuery(query: String?) {
-        query ?: return
-        updateState { it.copy(searchQuery = query) }
-    }
-
-    private fun buildPagedList(factory: ArticlesDataFactory):
-            LiveData<PagedList<ArticleItemData>> {
-
-        val builder = LivePagedListBuilder(factory, listConfig)
-
-        // if all articles
-        if (factory.strategy is ArticleStrategy.AllArticles) {
+        //if all articles
+        if (dataFactory.strategy is ArticleStrategy.AllArticles) {
             builder.setBoundaryCallback(
-                ArticleBoundaryCallback(
+                ArticlesBoundaryCallback(
                     ::zeroLoadingHandle,
                     ::itemAtEndHandle
                 )
             )
         }
 
-        return builder.setFetchExecutor(Executors.newSingleThreadExecutor())
+        return builder
+            .setFetchExecutor(Executors.newSingleThreadExecutor())
             .build()
     }
 
@@ -75,12 +82,15 @@ class ArticlesViewModel(handle: SavedStateHandle) :
             )
             if (items.isNotEmpty()) {
                 repository.insertArticlesToDb(items)
+                //invalidate data in data source -> create new LiveData<PagedList>
                 listData.value?.dataSource?.invalidate()
             }
+
             withContext(Dispatchers.Main) {
                 notify(
                     Notify.TextMessage(
-                        "Load from network from ${items.firstOrNull()?.id} to ${items.lastOrNull()?.id}"
+                        "Load from network articles from ${items.firstOrNull()?.id} " +
+                                "to ${items.lastOrNull()?.id}"
                     )
                 )
             }
@@ -88,41 +98,56 @@ class ArticlesViewModel(handle: SavedStateHandle) :
     }
 
     private fun zeroLoadingHandle() {
+        notify(Notify.TextMessage("Storage is empty"))
         viewModelScope.launch(Dispatchers.IO) {
             val items =
-                repository.loadArticlesFromNetwork(start = 0, size = listConfig.initialLoadSizeHint)
+                repository.loadArticlesFromNetwork(
+                    start = 0,
+                    size = listConfig.initialLoadSizeHint
+                )
             if (items.isNotEmpty()) {
                 repository.insertArticlesToDb(items)
+                //invalidate data in data source -> create new LiveData<PagedList>
                 listData.value?.dataSource?.invalidate()
             }
         }
     }
 
-    fun handleToggleBookmark(id: String, isChecked: Boolean) {
-        repository.updateBookmark(id, isChecked)
-        listData.value?.dataSource?.invalidate()
+    fun handleSearch(query: String?) {
+        query ?: return
+        updateState { it.copy(searchQuery = query) }
     }
 
+    fun handleSearchMode(isSearch: Boolean) {
+        updateState { it.copy(isSearch = isSearch) }
+    }
+
+    fun handleToggleBookmark(id: String, isChecked: Boolean) {
+        repository.updateBookmark(id, !isChecked)
+        listData.value?.dataSource?.invalidate()
+    }
 }
 
 data class ArticlesState(
     val isSearch: Boolean = false,
     val searchQuery: String? = null,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val isBookmark: Boolean = false
 ) : IViewModelState
 
-class ArticleBoundaryCallback(
+
+class ArticlesBoundaryCallback(
     private val zeroLoadingHandle: () -> Unit,
     private val itemAtEndHandle: (ArticleItemData) -> Unit
-) : PagedList.BoundaryCallback<ArticleItemData>() {
 
+) : PagedList.BoundaryCallback<ArticleItemData>() {
     override fun onZeroItemsLoaded() {
-        // Storage is empty
+        //Storage is empty
         zeroLoadingHandle()
     }
 
     override fun onItemAtEndLoaded(itemAtEnd: ArticleItemData) {
-        // user scroll down -> need load more items
+        //user scroll down -> need load more items
         itemAtEndHandle(itemAtEnd)
     }
 }

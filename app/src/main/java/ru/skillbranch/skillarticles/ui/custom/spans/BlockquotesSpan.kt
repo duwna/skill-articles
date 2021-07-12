@@ -23,9 +23,9 @@ class BlockquotesSpan(
     ) {
         paint.withCustomColor {
             canvas.drawLine(
-                quoteWidth / 2f,
+                quoteWidth/2f,
                 lineTop.toFloat(),
-                quoteWidth / 2f,
+                quoteWidth/2f,
                 lineBottom.toFloat(),
                 paint
             )
@@ -40,10 +40,13 @@ class BlockquotesSpan(
         val oldColor = color
         val oldStyle = style
         val oldWidth = strokeWidth
+
         color = lineColor
         style = Paint.Style.STROKE
         strokeWidth = quoteWidth
+
         block()
+
         color = oldColor
         style = oldStyle
         strokeWidth = oldWidth

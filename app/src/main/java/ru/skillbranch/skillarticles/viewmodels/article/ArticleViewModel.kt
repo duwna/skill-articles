@@ -1,12 +1,12 @@
 package ru.skillbranch.skillarticles.viewmodels.article
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import ru.skillbranch.skillarticles.data.models.AppSettings
 import ru.skillbranch.skillarticles.data.models.ArticleData
 import ru.skillbranch.skillarticles.data.models.ArticlePersonalInfo
 import ru.skillbranch.skillarticles.data.models.CommentItemData
@@ -27,11 +27,7 @@ import java.util.concurrent.Executors
 class ArticleViewModel(
     handle: SavedStateHandle,
     private val articleId: String
-) : BaseViewModel<ArticleState>(
-    handle,
-    ArticleState()
-), IArticleViewModel {
-
+) : BaseViewModel<ArticleState>(handle, ArticleState()), IArticleViewModel {
     private val repository = ArticleRepository
     private var clearContent: String? = null
     private val listConfig by lazy {
@@ -41,12 +37,14 @@ class ArticleViewModel(
             .build()
     }
 
-    private val listData: LiveData<PagedList<CommentItemData>> =
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    val listData: LiveData<PagedList<CommentItemData>> =
         Transformations.switchMap(getArticleData()) {
             buildPagedList(repository.allComments(articleId, it?.commentCount ?: 0))
         }
 
     init {
+        //subscribe on mutable data
         subscribeOnDataSource(getArticleData()) { article, state ->
             article ?: return@subscribeOnDataSource null
             state.copy(
@@ -54,8 +52,8 @@ class ArticleViewModel(
                 title = article.title,
                 category = article.category,
                 categoryIcon = article.categoryIcon,
-                author = article.author,
-                date = article.date.format()
+                date = article.date.format(),
+                author = article.author
             )
         }
 
@@ -75,7 +73,7 @@ class ArticleViewModel(
             )
         }
 
-        subscribeOnDataSource(repository.getAppSettings()) { settings: AppSettings, state ->
+        subscribeOnDataSource(repository.getAppSettings()) { settings, state ->
             state.copy(
                 isDarkMode = settings.isDarkMode,
                 isBigText = settings.isBigText
@@ -87,15 +85,26 @@ class ArticleViewModel(
         }
     }
 
-    override fun getArticleContent(): LiveData<List<MarkdownElement>?> =
-        repository.loadArticleContent(articleId)
+    //load text from network
+    override fun getArticleContent(): LiveData<List<MarkdownElement>?> {
+        return repository.loadArticleContent(articleId)
+    }
 
-    override fun getArticleData(): LiveData<ArticleData?> =
-        repository.getArticle(articleId)
+    //load data from db
+    override fun getArticleData(): LiveData<ArticleData?> {
+        return repository.getArticle(articleId)
+    }
 
-    override fun getArticlePersonalInfo(): LiveData<ArticlePersonalInfo?> =
-        repository.loadArticlePersonalInfo(articleId)
+    //load data from db
+    override fun getArticlePersonalInfo(): LiveData<ArticlePersonalInfo?> {
+        return repository.loadArticlePersonalInfo(articleId)
+    }
 
+    //app settings
+    override fun handleNightMode() {
+        val settings = currentState.toAppSettings()
+        repository.updateSettings(settings.copy(isDarkMode = !settings.isDarkMode))
+    }
 
     override fun handleUpText() {
         repository.updateSettings(currentState.toAppSettings().copy(isBigText = true))
@@ -105,28 +114,8 @@ class ArticleViewModel(
         repository.updateSettings(currentState.toAppSettings().copy(isBigText = false))
     }
 
-    override fun handleNightMode() {
-        val settings = currentState.toAppSettings()
-        repository.updateSettings(settings.copy(isDarkMode = !settings.isDarkMode))
-    }
 
-    override fun handleLike() {
-        val toggleLike = {
-            val info = currentState.toArticlePersonalInfo()
-            repository.updateArticlePersonalInfo(info.copy(isLike = !info.isLike))
-        }
-        toggleLike()
-        val msg = if (currentState.isLike) Notify.TextMessage("Mark is liked")
-        else {
-            Notify.ActionMessage(
-                "Don`t like it anymore",
-                "No, still like it",
-                toggleLike
-            )
-        }
-        notify(msg)
-    }
-
+    //personal article info
     override fun handleBookmark() {
         val info = currentState.toArticlePersonalInfo()
         repository.updateArticlePersonalInfo(info.copy(isBookmark = !info.isBookmark))
@@ -135,11 +124,36 @@ class ArticleViewModel(
         notify(Notify.TextMessage(msg))
     }
 
+    override fun handleLike() {
+        val isLiked = currentState.isLike
+        val toggleLike = {
+            val info = currentState.toArticlePersonalInfo()
+            repository.updateArticlePersonalInfo(info.copy(isLike = !info.isLike))
+        }
+
+        toggleLike()
+
+        val msg = if (!isLiked) Notify.TextMessage("Mark is liked")
+        else {
+            Notify.ActionMessage(
+                "Don`t like it anymore", //message
+                "No, still like it", //action label on snackbar
+                toggleLike // handler function , if press "No, still like it" on snackbar, then toggle again
+            )
+        }
+
+        notify(msg)
+    }
+
+
+    //not implemented
     override fun handleShare() {
         val msg = "Share is not implemented"
         notify(Notify.ErrorMessage(msg, "OK", null))
     }
 
+
+    //session state
     override fun handleToggleMenu() {
         updateState { it.copy(isShowMenu = !it.isShowMenu) }
     }
@@ -150,44 +164,70 @@ class ArticleViewModel(
 
     override fun handleSearch(query: String?) {
         query ?: return
-        if (clearContent == null && currentState.content.isNotEmpty()) {
-            clearContent = currentState.content.clearContent()
-        }
+        if (clearContent == null && currentState.content.isNotEmpty()) clearContent =
+            currentState.content.clearContent()
+
         val result = clearContent
             .indexesOf(query)
             .map { it to it + query.length }
-
         updateState { it.copy(searchQuery = query, searchResults = result, searchPosition = 0) }
     }
 
-    fun handleUpResult() {
+    override fun handleUpResult() {
         updateState { it.copy(searchPosition = it.searchPosition.dec()) }
     }
 
-    fun handleDownResult() {
+    override fun handleDownResult() {
         updateState { it.copy(searchPosition = it.searchPosition.inc()) }
     }
 
-    fun handleCopyCode() {
+    override fun handleCopyCode() {
         notify(Notify.TextMessage("Code copy to clipboard"))
     }
 
-    fun handleSendComment(comment: String) {
-        if (!currentState.isAuth) navigate(NavigationCommand.StartLogin())
-        viewModelScope.launch {
-            repository.sendComment(articleId, comment, currentState.answerToSlug)
-            withContext(Dispatchers.Main) {
-                updateState { it.copy(answerTo = null, answerToSlug = null) }
+    override fun handleSendComment(comment: String?) {
+        if (comment == null) {
+            notify(Notify.TextMessage("Comment must be not empty"))
+            return
+        }
+        updateState { it.copy(commentText = comment) }
+        if (!currentState.isAuth) {
+            navigate(NavigationCommand.StartLogin())
+        } else {
+            viewModelScope.launch {
+                repository.sendComment(
+                    articleId,
+                    currentState.commentText!!,
+                    currentState.answerToSlug
+                )
+                withContext(Dispatchers.Main) {
+                    updateState {
+                        it.copy(
+                            answerTo = null,
+                            answerToSlug = null,
+                            commentText = null
+                        )
+                    }
+                }
             }
+
         }
     }
 
-    fun observeList(owner: LifecycleOwner, onChanged: (PagedList<CommentItemData>) -> Unit) {
+    fun observeList(
+        owner: LifecycleOwner,
+        onChanged: (list: PagedList<CommentItemData>) -> Unit
+    ) {
         listData.observe(owner, Observer { onChanged(it) })
     }
 
-    private fun buildPagedList(dataFactory: CommentsDataFactory): LiveData<PagedList<CommentItemData>>{
-        return LivePagedListBuilder<String, CommentItemData>(dataFactory, listConfig)
+    private fun buildPagedList(
+        dataFactory: CommentsDataFactory
+    ): LiveData<PagedList<CommentItemData>> {
+        return LivePagedListBuilder<String, CommentItemData>(
+            dataFactory,
+            listConfig
+        )
             .setFetchExecutor(Executors.newSingleThreadExecutor())
             .build()
     }
@@ -197,48 +237,52 @@ class ArticleViewModel(
     }
 
     fun handleClearComment() {
-        updateState { it.copy(answerTo = null, answerToSlug = null) }
+        updateState { it.copy(answerTo = null, answerToSlug = null, commentText = null) }
     }
 
     fun handleReplyTo(slug: String, name: String) {
         updateState { it.copy(answerToSlug = slug, answerTo = "Reply to $name") }
     }
+
 }
 
-
 data class ArticleState(
-    val isAuth: Boolean = false,
-    val isLoadingContent: Boolean = true,
-    val isLoadingReviews: Boolean = true,
-    val isLike: Boolean = false,
-    val isBookmark: Boolean = false,
-    val isShowMenu: Boolean = false,
-    val isBigText: Boolean = false,
-    val isDarkMode: Boolean = false,
-    val isSearch: Boolean = false,
-    val searchQuery: String? = null,
-    val searchResults: List<Pair<Int, Int>> = emptyList(),
-    val searchPosition: Int = 0,
-    val shareLink: String? = null,
-    val title: String? = null,
-    val category: String? = null,
-    val categoryIcon: Any? = null,
-    val date: String? = null,
-    val author: Any? = null,
-    val poster: String? = null,
-    val content: List<MarkdownElement> = emptyList(),
-    val reviews: List<Any> = emptyList(),
+    val isAuth: Boolean = false, //пользователь авторизован
+    val isLoadingContent: Boolean = true, //контент загружается
+    val isLoadingReviews: Boolean = true, //отзывы загружаются
+    val isLike: Boolean = false, //отмечено как Like
+    val isBookmark: Boolean = false, //в закладках
+    val isShowMenu: Boolean = false, //отображается меню
+    val isBigText: Boolean = false, //шрифт увеличен
+    val isDarkMode: Boolean = false, //темный режим
+    val isSearch: Boolean = false, //режим поиска
+    val searchQuery: String? = null, // поисковы запрос
+    val searchResults: List<Pair<Int, Int>> = emptyList(), //результаты поиска (стартовая и конечная позиции)
+    val searchPosition: Int = 0, //текущая позиция найденного результата
+    val shareLink: String? = null, //ссылка Share
+    val title: String? = null, //заголовок статьи
+    val category: String? = null, //категория
+    val categoryIcon: Any? = null, //иконка категории
+    val date: String? = null, //дата публикации
+    val author: Any? = null, //автор статьи
+    val poster: String? = null, //обложка статьи
+    val content: List<MarkdownElement> = emptyList(), //контент
     val commentsCount: Int = 0,
     val answerTo: String? = null,
     val answerToSlug: String? = null,
-    val showBottomBar: Boolean = true
-) : IViewModelState {
+    val showBottomBar: Boolean = true,
+    val commentText: String? = null
 
+) : IViewModelState {
     override fun save(outState: SavedStateHandle) {
+
         outState.set("isSearch", isSearch)
         outState.set("searchQuery", searchQuery)
         outState.set("searchResults", searchResults)
         outState.set("searchPosition", searchPosition)
+        outState.set("commentText", commentText)
+        outState.set("answerTo", answerTo)
+        outState.set("answerToSlug", answerToSlug)
     }
 
     override fun restore(savedState: SavedStateHandle): ArticleState {
@@ -246,7 +290,10 @@ data class ArticleState(
             isSearch = savedState["isSearch"] ?: false,
             searchQuery = savedState["searchQuery"],
             searchResults = savedState["searchResults"] ?: emptyList(),
-            searchPosition = savedState["searchPosition"] ?: 0
+            searchPosition = savedState["searchPosition"] ?: 0,
+            commentText = savedState["commentText"],
+            answerTo = savedState["answerTo"],
+            answerToSlug = savedState["answerToSlug"]
         )
     }
 }

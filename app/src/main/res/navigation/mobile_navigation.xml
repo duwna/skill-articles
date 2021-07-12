@@ -41,8 +41,12 @@
         android:label="@string/title_articles"
         tools:layout="@layout/fragment_articles" >
         <action
-            android:id="@+id/action_nav_articles_to_page_article"
+            android:id="@+id/action_to_page_article"
             app:destination="@id/page_article" />
+        <argument
+            android:name="isBookmarks"
+            app:argType="boolean"
+            android:defaultValue="false" />
     </fragment>
     <fragment
         android:id="@+id/nav_profile"
@@ -51,11 +55,15 @@
         tools:layout="@layout/fragment_profile" />
     <fragment
         android:id="@+id/nav_bookmarks"
-        android:name="ru.skillbranch.skillarticles.ui.bookmarks.BookmarksFragment"
+        android:name="ru.skillbranch.skillarticles.ui.articles.ArticlesFragment"
         android:label="@string/title_bookmarks"
-        tools:layout="@layout/fragment_bookmarks">
+        tools:layout="@layout/fragment_articles" >
+        <argument
+            android:name="isBookmarks"
+            app:argType="boolean"
+            android:defaultValue="true" />
         <action
-            android:id="@+id/action_nav_bookmarks_to_page_article"
+            android:id="@+id/action_to_page_article"
             app:destination="@id/page_article" />
     </fragment>
     <fragment
@@ -63,13 +71,9 @@
         android:name="ru.skillbranch.skillarticles.ui.transcriptions.TranscriptionsFragment"
         android:label="@string/title_transcriptions"
         tools:layout="@layout/fragment_transcriptions" />
-
-
-
-
     <navigation
         android:id="@+id/auth"
-        app:startDestination="@+id/nav_auth"
+        app:startDestination="@id/nav_auth"
         android:label="@string/title_authorization">
         <fragment
             android:id="@+id/nav_auth"
@@ -81,9 +85,6 @@
                 android:name="private_destination"
                 app:argType="integer"
                 android:defaultValue="-1" />
-            <action
-                android:id="@+id/action_nav_auth_to_page_privacy_policy2"
-                app:destination="@id/page_privacy_policy" />
         </fragment>
         <fragment
             android:id="@+id/page_privacy_policy"
@@ -93,14 +94,10 @@
 
     </navigation>
 
-
-
-
     <!--global actions -->
     <action
         android:id="@+id/start_login"
         app:destination="@id/auth"/>
-
     <action
         android:id="@+id/finish_login"
         app:popUpTo="@id/auth"

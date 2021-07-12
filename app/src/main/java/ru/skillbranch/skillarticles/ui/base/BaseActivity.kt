@@ -11,6 +11,7 @@ import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.children
+import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
@@ -19,6 +20,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions.circleCropTransform
 import com.google.android.material.behavior.HideBottomViewOnScrollBehavior
 import kotlinx.android.synthetic.main.activity_root.*
+import kotlinx.android.synthetic.main.activity_root.view.*
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
@@ -29,42 +31,25 @@ import ru.skillbranch.skillarticles.viewmodels.base.Notify
 abstract class BaseActivity<T : BaseViewModel<out IViewModelState>> : AppCompatActivity() {
     protected abstract val viewModel: T
     protected abstract val layout: Int
-
     lateinit var navController: NavController
 
     val toolbarBuilder = ToolbarBuilder()
     val bottombarBuilder = BottombarBuilder()
 
+    //set listeners, tuning views
     abstract fun subscribeOnState(state: IViewModelState)
+
     abstract fun renderNotification(notify: Notify)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(layout)
         setSupportActionBar(toolbar)
-
         viewModel.observeState(this) { subscribeOnState(it) }
         viewModel.observeNotifications(this) { renderNotification(it) }
         viewModel.observeNavigation(this) { subscribeOnNavigation(it) }
 
         navController = findNavController(R.id.nav_host_fragment)
-    }
-
-    private fun subscribeOnNavigation(command: NavigationCommand) {
-        when (command) {
-            is NavigationCommand.To -> navController.navigate(
-                command.destination, command.args,
-                command.options, command.extras
-            )
-            is NavigationCommand.FinishLogin -> {
-                navController.navigate(R.id.finish_login)
-                if (command.privateDestination != null) navController.navigate(command.privateDestination)
-            }
-            is NavigationCommand.StartLogin -> navController.navigate(
-                R.id.start_login,
-                bundleOf("private_destination" to (command.privateDestination ?: -1))
-            )
-        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -80,36 +65,80 @@ abstract class BaseActivity<T : BaseViewModel<out IViewModelState>> : AppCompatA
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
+
+    private fun subscribeOnNavigation(command: NavigationCommand) {
+        when (command) {
+            is NavigationCommand.To -> {
+                navController.navigate(
+                    command.destination,
+                    command.args,
+                    command.options,
+                    command.extras
+                )
+            }
+
+            is NavigationCommand.FinishLogin -> {
+                navController.navigate(R.id.finish_login)
+                if (command.privateDestination != null) navController.navigate(command.privateDestination)
+            }
+
+            is NavigationCommand.StartLogin -> {
+                navController.navigate(
+                    R.id.start_login,
+                    bundleOf("private_destination" to (command.privateDestination ?: -1))
+                )
+            }
+        }
+    }
 }
 
-class ToolbarBuilder {
+class ToolbarBuilder() {
     var title: String? = null
     var subtitle: String? = null
     var logo: String? = null
     var visibility: Boolean = true
     val items: MutableList<MenuItemHolder> = mutableListOf()
 
-    fun setTitle(title: String) = apply { this.title = title }
-    fun setSubtitle(subTitle: String) = apply { this.subtitle = subTitle }
-    fun setLogo(logo: String) = apply { this.logo = logo }
-    fun setVisibility(isVisible: Boolean) = apply { this.visibility = isVisible }
-    fun addMenuItem(item: MenuItemHolder) = apply { this.items.add(item) }
-
-    fun invalidate() = apply {
-        title = null
-        subtitle = null
-        logo = null
-        visibility = true
-        items.clear()
+    fun setTitle(title: String): ToolbarBuilder {
+        this.title = title
+        return this
     }
 
-    fun prepare(prepareFn: (ToolbarBuilder.() -> Unit)?) = apply { prepareFn?.invoke(this) }
+    fun setSubtitle(subtitle: String): ToolbarBuilder {
+        this.subtitle = subtitle
+        return this
+    }
+
+    fun setLogo(logo: String): ToolbarBuilder {
+        this.logo = logo
+        return this
+    }
+
+    fun addMenuItem(item: MenuItemHolder): ToolbarBuilder {
+        this.items.add(item)
+        return this
+    }
+
+    fun invalidate(): ToolbarBuilder {
+        this.title = null
+        this.subtitle = null
+        this.logo = null
+        this.visibility = true
+        this.items.clear()
+        return this
+    }
+
+    fun prepare(prepareFn: (ToolbarBuilder.() -> Unit)?): ToolbarBuilder {
+        prepareFn?.invoke(this)
+        return this
+    }
 
     fun build(context: FragmentActivity) {
 
-        context.appbar?.setExpanded(true, true)
+        //show appbar if hidden due to scroll behavior
+        context.appbar.setExpanded(true, true)
 
-        context.toolbar?.run {
+        with(context.toolbar) {
             if (this@ToolbarBuilder.title != null) title = this@ToolbarBuilder.title
             subtitle = this@ToolbarBuilder.subtitle
             if (this@ToolbarBuilder.logo != null) {
@@ -118,11 +147,10 @@ class ToolbarBuilder {
                 val logoPlaceholder = getDrawable(context, R.drawable.logo_placeholder)
 
                 logo = logoPlaceholder
-                val logo = children.last() as? ImageView
-
-                if (logo != null) {
+                toolbar.logoDescription = "logo"
+                toolbar.doOnNextLayout {
+                    val logo =children.filter { it.contentDescription == "logo" }.first() as ImageView
                     logo.scaleType = ImageView.ScaleType.CENTER_CROP
-
                     (logo.layoutParams as? Toolbar.LayoutParams)?.let {
                         it.width = logoSize
                         it.height = logoSize
@@ -147,36 +175,50 @@ data class MenuItemHolder(
     val title: String,
     val menuId: Int,
     val icon: Int,
-    val actionViewLayout: Int?,
+    val actionViewLayout: Int? = null,
     val clickListener: ((MenuItem) -> Unit)? = null
 )
 
 class BottombarBuilder() {
-    private var visible = true
+    private var visible: Boolean = true
     private val views = mutableListOf<Int>()
     private val tempViews = mutableListOf<Int>()
 
-    fun addView(layoutId: Int) = apply { views.add(layoutId) }
-    fun setVisibility(isVisible: Boolean) = apply { this.visible = isVisible }
+    fun addView(layoutId: Int): BottombarBuilder {
+        views.add(layoutId)
+        return this
+    }
 
-    fun prepare(prepareFn: (BottombarBuilder.() -> Unit)?) = apply { prepareFn?.invoke(this) }
+    fun setVisibility(isVisible: Boolean): BottombarBuilder {
+        visible = isVisible
+        return this
+    }
 
-    fun invalidate() = apply {
+    fun prepare(prepareFn: (BottombarBuilder.() -> Unit)?): BottombarBuilder {
+        prepareFn?.invoke(this)
+        return this
+    }
+
+    fun invalidate(): BottombarBuilder {
         visible = true
         views.clear()
+        return this
     }
 
     fun build(context: FragmentActivity) {
 
+        //remove temp views
         if (tempViews.isNotEmpty()) {
             tempViews.forEach {
-//                context.container.removeViewAt(it)
                 val view = context.container.findViewById<View>(it)
                 context.container.removeView(view)
             }
+
             tempViews.clear()
+//            context.clearFindViewByIdCache()
         }
 
+        //add new bottom bar views
         if (views.isNotEmpty()) {
             val inflater = LayoutInflater.from(context)
             views.forEach {
@@ -186,12 +228,13 @@ class BottombarBuilder() {
             }
         }
 
-        context.nav_view?.run {
+        with(context.nav_view) {
             isVisible = visible
-            ((layoutParams as CoordinatorLayout.LayoutParams)
-                .behavior as HideBottomViewOnScrollBehavior).slideUp(this)
+            //show bottombar if hidden due to scroll behavior
+            ((layoutParams as CoordinatorLayout.LayoutParams).behavior as HideBottomViewOnScrollBehavior)
+                .slideUp(this)
         }
-    }
 
+    }
 
 }
