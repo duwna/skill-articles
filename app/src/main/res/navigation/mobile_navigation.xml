@@ -8,7 +8,7 @@
     <fragment
         android:id="@+id/page_article"
         android:name="ru.skillbranch.skillarticles.ui.article.ArticleFragment"
-        android:label="ArticleFragment" >
+        android:label="ArticleFragment">
         <argument
             android:name="article_id"
             app:argType="string"
@@ -39,7 +39,7 @@
         android:id="@+id/nav_articles"
         android:name="ru.skillbranch.skillarticles.ui.articles.ArticlesFragment"
         android:label="@string/title_articles"
-        tools:layout="@layout/fragment_articles" >
+        tools:layout="@layout/fragment_articles">
         <action
             android:id="@+id/action_to_page_article"
             app:destination="@id/page_article" />
@@ -47,6 +47,9 @@
             android:name="isBookmarks"
             app:argType="boolean"
             android:defaultValue="false" />
+        <action
+            android:id="@+id/choose_category"
+            app:destination="@id/dialog_choose_category" />
     </fragment>
     <fragment
         android:id="@+id/nav_profile"
@@ -57,7 +60,7 @@
         android:id="@+id/nav_bookmarks"
         android:name="ru.skillbranch.skillarticles.ui.articles.ArticlesFragment"
         android:label="@string/title_bookmarks"
-        tools:layout="@layout/fragment_articles" >
+        tools:layout="@layout/fragment_articles">
         <argument
             android:name="isBookmarks"
             app:argType="boolean"
@@ -65,6 +68,9 @@
         <action
             android:id="@+id/action_to_page_article"
             app:destination="@id/page_article" />
+        <action
+            android:id="@+id/choose_category"
+            app:destination="@id/dialog_choose_category" />
     </fragment>
     <fragment
         android:id="@+id/nav_transcriptions"
@@ -79,7 +85,7 @@
             android:id="@+id/nav_auth"
             android:name="ru.skillbranch.skillarticles.ui.auth.AuthFragment"
             android:label="@string/title_authorization"
-            tools:layout="@layout/fragment_auth" >
+            tools:layout="@layout/fragment_auth">
 
             <argument
                 android:name="private_destination"
@@ -97,10 +103,21 @@
     <!--global actions -->
     <action
         android:id="@+id/start_login"
-        app:destination="@id/auth"/>
+        app:destination="@id/auth" />
     <action
         android:id="@+id/finish_login"
         app:popUpTo="@id/auth"
-        app:popUpToInclusive="true"/>
+        app:popUpToInclusive="true" />
+    <dialog
+        android:id="@+id/dialog_choose_category"
+        android:name="ru.skillbranch.skillarticles.ui.dialogs.ChooseCategoryDialog"
+        android:label="ChooseCategoryDialog" >
+        <argument
+            android:name="selected_categories"
+            app:argType="string[]" />
+        <argument
+            android:name="categories"
+            app:argType="ru.skillbranch.skillarticles.data.local.entities.CategoryData[]" />
+    </dialog>
 
 </navigation>
