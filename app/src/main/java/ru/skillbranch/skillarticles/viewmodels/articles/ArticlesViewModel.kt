@@ -36,7 +36,7 @@ class ArticlesViewModel(handle: SavedStateHandle) :
         onChange: (list: PagedList<ArticleItem>) -> Unit
     ) {
         updateState { it.copy(isBookmark = isBookmark) }
-        listData.observe(owner, Observer { onChange(it) })
+        listData.observe(owner, Observer(onChange))
     }
 
 
@@ -123,7 +123,6 @@ class ArticlesViewModel(handle: SavedStateHandle) :
     fun applyCategories(selectedCategories: List<String>) {
         updateState { it.copy(selectedCategories = selectedCategories) }
     }
-
 
 
 }

@@ -1,21 +1,15 @@
 package ru.skillbranch.skillarticles.data.repositories
 
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
 import ru.skillbranch.skillarticles.data.NetworkDataHolder
 import ru.skillbranch.skillarticles.data.local.DbManager.db
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.local.entities.ArticleFull
-import ru.skillbranch.skillarticles.data.local.entities.ArticleItem
-import ru.skillbranch.skillarticles.data.local.entities.ArticlePersonalInfo
-import ru.skillbranch.skillarticles.data.local.entities.CategoryData
 import ru.skillbranch.skillarticles.data.models.AppSettings
-import ru.skillbranch.skillarticles.data.models.ArticleData
 import ru.skillbranch.skillarticles.data.models.CommentItemData
 import ru.skillbranch.skillarticles.data.models.User
-import ru.skillbranch.skillarticles.data.remote.res.ArticleRes
 import ru.skillbranch.skillarticles.extensions.data.toArticleContent
 import java.lang.Thread.sleep
 import kotlin.math.abs
@@ -25,7 +19,7 @@ interface IArticleRepository {
     fun getAppSettings(): LiveData<AppSettings>
     fun toggleLike(articleId: String)
     fun toggleBookmark(articleId: String)
-    fun isAuth(): MutableLiveData<Boolean>
+    fun isAuth(): LiveData<Boolean>
     fun loadCommentsByRange(slug: String?, size: Int, articleId: String): List<CommentItemData>
     fun sendMessage(articleId: String, comment: String, answerToSlug: String?)
     fun loadAllComments(articleId: String, totalCount: Int): CommentsDataFactory
@@ -48,7 +42,7 @@ object ArticleRepository : IArticleRepository{
         return articlesDao.findFullArticle(articleId)
     }
 
-    override fun getAppSettings(): LiveData<AppSettings> = preferences.getAppSettings() //from preferences
+    override fun getAppSettings(): LiveData<AppSettings> = preferences.getAppSettings()
 
     override fun toggleLike(articleId: String) {
         articlesPersonalDao.toggleLikeOrInsert(articleId)
@@ -67,7 +61,7 @@ object ArticleRepository : IArticleRepository{
         return articlesCountsDao.getCommentsCount(articleId)
     }
 
-    override fun isAuth(): MutableLiveData<Boolean> = preferences.isAuth()
+    override fun isAuth(): LiveData<Boolean> = preferences.isAuth()
 
     override fun loadAllComments(articleId: String, totalCount: Int) =
         CommentsDataFactory(
@@ -107,6 +101,7 @@ object ArticleRepository : IArticleRepository{
     }
 
     override fun updateSettings(copy: AppSettings) {
+        preferences.setAppSettings(copy)
     }
 
     override fun sendMessage(articleId: String, comment: String, answerToSlug: String?) {

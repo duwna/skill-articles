@@ -20,3 +20,8 @@ class MarkdownConverter {
     }
 }
 
+class TagsConverter {
+    @TypeConverter
+    fun concatTagsToList(concatTags: String): List<String> = concatTags.split(",")
+}
+

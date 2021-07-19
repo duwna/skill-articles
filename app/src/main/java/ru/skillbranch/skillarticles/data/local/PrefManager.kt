@@ -9,29 +9,37 @@ import ru.skillbranch.skillarticles.data.delegates.PrefDelegate
 import ru.skillbranch.skillarticles.data.models.AppSettings
 
 object PrefManager {
-    internal val preferences : SharedPreferences by lazy {
+
+    internal val preferences: SharedPreferences by lazy {
         PreferenceManager.getDefaultSharedPreferences(App.applicationContext())
     }
 
-    var storedBoolean by PrefDelegate(false)
-    var storedString by PrefDelegate("test")
-    var storedInt by PrefDelegate(Int.MAX_VALUE)
-    var storedLong by PrefDelegate(Long.MAX_VALUE)
-    var storedFloat by PrefDelegate(100f)
+    private var isAuthPref by PrefDelegate(false)
+    private var isDarkModePref by PrefDelegate(false)
+    private var isBigTextPref by PrefDelegate(false)
 
-    fun clearAll(){
+    private val appSettings = MutableLiveData(
+        AppSettings(isDarkModePref ?: false, isBigTextPref ?: false)
+    )
+
+    private val isAuth = MutableLiveData(isAuthPref ?: false)
+
+    fun clearAll() {
         preferences.edit().clear().apply()
     }
 
-    fun getAppSettings(): LiveData<AppSettings> {
-        return MutableLiveData(AppSettings())
-    }
+    fun getAppSettings(): LiveData<AppSettings> = appSettings
 
-    fun isAuth(): MutableLiveData<Boolean> {
-        return MutableLiveData(false)
+    fun isAuth(): LiveData<Boolean> = isAuth
+
+    fun setAppSettings(copy: AppSettings) {
+        appSettings.value = copy
+        isDarkModePref = copy.isDarkMode
+        isBigTextPref = copy.isBigText
     }
 
     fun setAuth(auth: Boolean) {
-
+        isAuth.value = auth
+        isAuthPref = auth
     }
 }

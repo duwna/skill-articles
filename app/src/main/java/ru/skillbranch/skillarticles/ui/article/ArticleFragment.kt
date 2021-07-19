@@ -5,12 +5,15 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.text.style.URLSpan
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
+import androidx.core.text.buildSpannedString
+import androidx.core.text.inSpans
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
@@ -35,6 +38,8 @@ import ru.skillbranch.skillarticles.ui.base.*
 import ru.skillbranch.skillarticles.ui.custom.ArticleSubmenu
 import ru.skillbranch.skillarticles.ui.custom.Bottombar
 import ru.skillbranch.skillarticles.ui.custom.ShimmerDrawable
+import ru.skillbranch.skillarticles.ui.custom.spans.IconLinkSpan
+import ru.skillbranch.skillarticles.ui.custom.spans.InlineCodeSpan
 import ru.skillbranch.skillarticles.ui.delegates.RenderProp
 import ru.skillbranch.skillarticles.viewmodels.article.ArticleState
 import ru.skillbranch.skillarticles.viewmodels.article.ArticleViewModel
@@ -206,7 +211,6 @@ class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
         }
 
         viewModel.observeList(viewLifecycleOwner) { commentsAdapter.submitList(it) }
-
     }
 
     override fun onDestroyView() {
@@ -376,6 +380,44 @@ class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
             if (it.isBlank() && et_comment.hasFocus()) et_comment.clearFocus()
         }
 
+        private val colorSecondary = requireContext().attrValue(R.attr.colorSecondary)
+        private val colorPrimary = requireContext().attrValue(R.attr.colorPrimary)
+        private val colorOnSurface = requireContext().attrValue(R.attr.colorOnSurface)
+        private val opacityColorSurface = requireContext().getColor(R.color.opacity_color_surface)
+        private val gap: Float = requireContext().dpToPx(8)
+        private val strikeWidth = requireContext().dpToPx(4)
+        private val cornerRadius = requireContext().dpToPx(8)
+        private val linkIcon = requireContext().getDrawable(R.drawable.ic_link_black_24dp)!!.apply {
+            setTint(colorSecondary)
+        }
+
+        private var tags by RenderProp(emptyList<String>()) { tags ->
+            tv_hashtags.text = buildSpannedString {
+                tags.forEach { tag ->
+                    inSpans(
+                        InlineCodeSpan(
+                            colorOnSurface,
+                            opacityColorSurface,
+                            cornerRadius,
+                            gap
+                        )
+                    ) { append(tag) }
+                }
+            }
+        }
+
+        private var source by RenderProp("") { source ->
+            tv_source.text = buildSpannedString {
+                inSpans(
+                    IconLinkSpan(linkIcon, gap, colorPrimary, strikeWidth),
+                    URLSpan(source)
+                ) {
+                    append("Article source")
+                }
+            }
+        }
+
+
         override val afterInflated: (() -> Unit)? = {
             dependsOn<Boolean, Boolean, List<Pair<Int, Int>>, Int>(
                 ::isLoadingContent,
@@ -403,6 +445,8 @@ class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
             isBigText = data.isBigText
             isDarkMode = data.isDarkMode
             content = data.content
+            tags = data.tags
+            source = data.source ?: ""
 
             isLoadingContent = data.isLoadingContent
             isSearch = data.isSearch

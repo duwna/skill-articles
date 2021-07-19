@@ -194,9 +194,7 @@ class ArticlesFragment : BaseFragment<ArticlesViewModel>() {
     inner class ArticlesBinding : Binding() {
         var searchQuery: String? = null
         var isSearch: Boolean = false
-        var isLoading: Boolean by RenderProp(true) {
-            //TODO show shimmer on rv_list
-        }
+        var isLoading: Boolean by RenderProp(true)
 
         var categories: List<CategoryData> = emptyList()
         var selectedCategories: List<String> by RenderProp(emptyList()) {
