@@ -6,6 +6,7 @@ import androidx.paging.PositionalDataSource
 import androidx.sqlite.db.SimpleSQLiteQuery
 import ru.skillbranch.skillarticles.data.NetworkDataHolder
 import ru.skillbranch.skillarticles.data.local.DbManager.db
+import ru.skillbranch.skillarticles.data.local.dao.*
 import ru.skillbranch.skillarticles.data.local.entities.ArticleItem
 import ru.skillbranch.skillarticles.data.local.entities.ArticleTagXRef
 import ru.skillbranch.skillarticles.data.local.entities.CategoryData
@@ -27,11 +28,11 @@ interface IArticlesRepository {
 object ArticlesRepository : IArticlesRepository {
 
     private val network = NetworkDataHolder
-    private val articlesDao = db.articlesDao()
-    private val articleCountsDao = db.articleCountsDao()
-    private val categoriesDao = db.categoriesDao()
-    private val tagsDao = db.tagsDao()
-    private val articlePersonalDao = db.articlePersonalInfosDao()
+    private var articlesDao = db.articlesDao()
+    private var articleCountsDao = db.articleCountsDao()
+    private var categoriesDao = db.categoriesDao()
+    private var tagsDao = db.tagsDao()
+    private var articlePersonalDao = db.articlePersonalInfosDao()
 
     override fun loadArticlesFromNetwork(start: Int, size: Int): List<ArticleRes> {
         return network.findArticlesItem(start, size)
@@ -73,6 +74,20 @@ object ArticlesRepository : IArticlesRepository {
 
     override fun incrementTagUseCount(tag: String) {
         tagsDao.incrementTagUseCount(tag)
+    }
+
+    fun setupTestDao(
+        articlesDao: ArticlesDao,
+        articleCountsDao: ArticleCountsDao,
+        categoriesDao: CategoriesDao,
+        tagsDao: TagsDao,
+        articlePersonalDao: ArticlePersonalInfosDao
+    ) {
+        this.articlesDao = articlesDao
+        this.articleCountsDao = articleCountsDao
+        this.categoriesDao = categoriesDao
+        this.tagsDao = tagsDao
+        this.articlePersonalDao = articlePersonalDao
     }
 }
 

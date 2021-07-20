@@ -1,12 +1,23 @@
 package ru.skillbranch.skillarticles.data.local.dao
 
+import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
+import ru.skillbranch.skillarticles.data.local.entities.Article
 import ru.skillbranch.skillarticles.data.local.entities.ArticlePersonalInfo
 
 @Dao
 interface ArticlePersonalInfosDao : BaseDao<ArticlePersonalInfo> {
+
+    @Transaction
+    fun upsert(list: List<ArticlePersonalInfo>) {
+        insert(list)
+            .mapIndexed { index, recordLResult ->
+                if (recordLResult == -1L) list[index] else null
+            }.filterNotNull()
+            .also { if (it.isNotEmpty()) update(it) }
+    }
 
     @Query("""
         UPDATE article_personal_infos SET is_like = NOT is_like, updated_at = CURRENT_TIMESTAMP
@@ -34,4 +45,9 @@ interface ArticlePersonalInfosDao : BaseDao<ArticlePersonalInfo> {
         }
     }
 
+    @Query("SELECT * FROM article_personal_infos")
+    fun findPersonalInfos(): LiveData<List<ArticlePersonalInfo>>
+
+    @Query("SELECT * FROM article_personal_infos WHERE article_id = :articleId")
+    fun findPersonalInfos(articleId: String): LiveData<ArticlePersonalInfo>
 }
