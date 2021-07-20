@@ -113,7 +113,7 @@ object ArticleRepository : IArticleRepository{
             articleId, comment, answerToSlug,
             User("777", "John Doe", "https://skill-branch.ru/img/mail/bot/android-category.png")
         )
-        articlesCountsDao.incrementLike(articleId)
+        articlesCountsDao.incrementCommentsCount(articleId)
     }
 
     fun setupTestDao(
