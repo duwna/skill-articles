@@ -101,5 +101,5 @@ data class ArticleFull(
     val date: Date,
     val content: List<MarkdownElement>? = null,
     val source: String? = null,
-    val tags: List<String>
+    val tags: List<String> = emptyList()
 )
