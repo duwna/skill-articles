@@ -15,15 +15,5 @@ class DateConverter {
 
 class MarkdownConverter {
     @TypeConverter
-    fun toMarkdown(content: String?): List<MarkdownElement>? {
-        return content?.let { MarkdownParser.parse(it) }
-    }
+    fun toMarkdown(content: String?): List<MarkdownElement>? = content?.let { MarkdownParser.parse(it) }
 }
-
-class TagsConverter {
-    @TypeConverter
-    fun concatTagsToList(concatTags: String?): List<String> {
-        return concatTags?.split(",") ?: emptyList()
-    }
-}
-

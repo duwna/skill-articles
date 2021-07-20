@@ -1,19 +1,18 @@
 package ru.skillbranch.skillarticles.data.repositories
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
 import ru.skillbranch.skillarticles.data.NetworkDataHolder
 import ru.skillbranch.skillarticles.data.local.DbManager.db
 import ru.skillbranch.skillarticles.data.local.PrefManager
+import ru.skillbranch.skillarticles.data.local.dao.ArticlePersonalInfosDao
 import ru.skillbranch.skillarticles.data.local.dao.ArticleContentsDao
 import ru.skillbranch.skillarticles.data.local.dao.ArticleCountsDao
-import ru.skillbranch.skillarticles.data.local.dao.ArticlePersonalInfosDao
 import ru.skillbranch.skillarticles.data.local.dao.ArticlesDao
 import ru.skillbranch.skillarticles.data.local.entities.ArticleFull
-import ru.skillbranch.skillarticles.data.models.AppSettings
-import ru.skillbranch.skillarticles.data.models.CommentItemData
-import ru.skillbranch.skillarticles.data.models.User
+import ru.skillbranch.skillarticles.data.models.*
 import ru.skillbranch.skillarticles.extensions.data.toArticleContent
 import java.lang.Thread.sleep
 import kotlin.math.abs
@@ -25,8 +24,8 @@ interface IArticleRepository {
     fun toggleBookmark(articleId: String)
     fun isAuth(): LiveData<Boolean>
     fun loadCommentsByRange(slug: String?, size: Int, articleId: String): List<CommentItemData>
-    fun sendMessage(articleId: String, comment: String, answerToSlug: String?)
-    fun loadAllComments(articleId: String, totalCount: Int): CommentsDataFactory
+    fun sendMessage(articleId: String, text: String, answerToSlug: String?)
+    fun loadAllComments(articleId: String, total: Int): CommentsDataFactory
     fun decrementLike(articleId: String)
     fun incrementLike(articleId: String)
     fun updateSettings(copy: AppSettings)
@@ -34,45 +33,61 @@ interface IArticleRepository {
     fun findArticleCommentCount(articleId: String): LiveData<Int>
 }
 
-object ArticleRepository : IArticleRepository{
+object ArticleRepository: IArticleRepository {
     private val network = NetworkDataHolder
-    val preferences = PrefManager
+    private val preferences = PrefManager
     private var articlesDao = db.articlesDao()
-    private var articlesPersonalDao = db.articlePersonalInfosDao()
-    private var articlesCountsDao = db.articleCountsDao()
-    private var articlesContentDao = db.articleContentsDao()
+    private var articlePersonalDao = db.articlePersonalInfosDao()
+    private var articleCountsDao = db.articleCountsDao()
+    private var articleContentsDao = db.articleContentsDao()
+
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun setupTestDao(
+        articlesDao: ArticlesDao,
+        articlePersonalDao: ArticlePersonalInfosDao,
+        articleCountsDao: ArticleCountsDao,
+        articleContentDao: ArticleContentsDao
+    ) {
+        this.articlesDao = articlesDao
+        this.articlePersonalDao = articlePersonalDao
+        this.articleCountsDao = articleCountsDao
+        this.articleContentsDao = articleContentDao
+    }
 
     override fun findArticle(articleId: String): LiveData<ArticleFull> {
         return articlesDao.findFullArticle(articleId)
     }
 
-    override fun getAppSettings(): LiveData<AppSettings> = preferences.getAppSettings()
+    override fun getAppSettings(): LiveData<AppSettings> = preferences.getAppSettings() //from preferences
 
     override fun toggleLike(articleId: String) {
-        articlesPersonalDao.toggleLikeOrInsert(articleId)
+        articlePersonalDao.toggleLikeOrInsert(articleId)
     }
 
     override fun toggleBookmark(articleId: String) {
-        articlesPersonalDao.toggleBookmarkOrInsert(articleId)
+        articlePersonalDao.toggleBookmarkOrInsert(articleId)
+    }
+
+    override fun updateSettings(appSettings: AppSettings) {
+        preferences.updateAppSettings(appSettings)
     }
 
     override fun fetchArticleContent(articleId: String) {
         val content = network.loadArticleContent(articleId).apply { sleep(1500) }
-        articlesContentDao.insert(content.toArticleContent())
+        articleContentsDao.insert(content.toArticleContent())
     }
 
     override fun findArticleCommentCount(articleId: String): LiveData<Int> {
-        return articlesCountsDao.getCommentsCount(articleId)
+        return articleCountsDao.getCommentsCount(articleId)
     }
 
     override fun isAuth(): LiveData<Boolean> = preferences.isAuth()
 
-    override fun loadAllComments(articleId: String, totalCount: Int) =
-        CommentsDataFactory(
-            itemProvider = ::loadCommentsByRange,
-            articleId = articleId,
-            totalCount = totalCount
-        )
+    override fun loadAllComments(articleId: String, totalCount: Int) = CommentsDataFactory(
+        itemProvider = ::loadCommentsByRange,
+        articleId = articleId,
+        totalCount = totalCount
+    )
 
     override fun loadCommentsByRange(
         slug: String?,
@@ -97,15 +112,11 @@ object ArticleRepository : IArticleRepository{
     }
 
     override fun decrementLike(articleId: String) {
-        articlesCountsDao.decrementLike(articleId)
+        articleCountsDao.decrementLike(articleId)
     }
 
     override fun incrementLike(articleId: String) {
-        articlesCountsDao.incrementLike(articleId)
-    }
-
-    override fun updateSettings(copy: AppSettings) {
-        preferences.setAppSettings(copy)
+        articleCountsDao.incrementLike(articleId)
     }
 
     override fun sendMessage(articleId: String, comment: String, answerToSlug: String?) {
@@ -113,21 +124,8 @@ object ArticleRepository : IArticleRepository{
             articleId, comment, answerToSlug,
             User("777", "John Doe", "https://skill-branch.ru/img/mail/bot/android-category.png")
         )
-        articlesCountsDao.incrementCommentsCount(articleId)
+        articleCountsDao.incrementCommentsCount(articleId)
     }
-
-    fun setupTestDao(
-        articlesDao: ArticlesDao,
-        articleCountsDao: ArticleCountsDao,
-        articleContentDao: ArticleContentsDao,
-        articlePersonalDao: ArticlePersonalInfosDao
-    ) {
-        this.articlesDao = articlesDao
-        this.articlesCountsDao = articleCountsDao
-        this.articlesContentDao = articleContentDao
-        this.articlesPersonalDao = articlePersonalDao
-    }
-
 }
 
 class CommentsDataFactory(
@@ -137,7 +135,6 @@ class CommentsDataFactory(
 ) : DataSource.Factory<String?, CommentItemData>() {
     override fun create(): DataSource<String?, CommentItemData> =
         CommentsDataSource(itemProvider, articleId, totalCount)
-
 }
 
 class CommentsDataSource(
@@ -170,5 +167,4 @@ class CommentsDataSource(
     }
 
     override fun getKey(item: CommentItemData): String = item.slug
-
 }

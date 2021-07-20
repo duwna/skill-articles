@@ -1,6 +1,5 @@
 package ru.skillbranch.skillarticles.viewmodels.article
 
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.*
 import androidx.paging.LivePagedListBuilder
@@ -8,6 +7,7 @@ import androidx.paging.PagedList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import ru.skillbranch.skillarticles.data.local.entities.Tag
 import ru.skillbranch.skillarticles.data.models.CommentItemData
 import ru.skillbranch.skillarticles.data.repositories.ArticleRepository
 import ru.skillbranch.skillarticles.data.repositories.CommentsDataFactory
@@ -254,7 +254,7 @@ data class ArticleState(
     val showBottomBar: Boolean = true,
     val commentText: String? = null,
     val source: String? = null,
-    val tags: List<String> = emptyList()
+    val tags: List<Tag> = emptyList()
 
 ) : IViewModelState {
     override fun save(outState: SavedStateHandle) {

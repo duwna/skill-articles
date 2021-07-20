@@ -1539,7 +1539,7 @@ val articleItems = Array(10) {
                 "#iOS",
                 "#Android",
                 "#Flutter",
-                "Native App"
+                "#Native App"
             ),
             content = articleContent9
         )

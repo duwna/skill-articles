@@ -2,12 +2,12 @@ package ru.skillbranch.skillarticles.data.remote.res
 
 import ru.skillbranch.skillarticles.data.local.entities.Author
 import ru.skillbranch.skillarticles.data.local.entities.Category
-import java.util.Date
+import java.util.*
 
-data class ArticleRes(
+data class ArticleRes (
     val data: ArticleDataRes,
     val counts: ArticleCountsRes,
-    val isActive: Boolean = true
+    val isActive:Boolean = true
 )
 
 data class ArticleCountsRes(
@@ -15,18 +15,18 @@ data class ArticleCountsRes(
     val likes: Int = 0,
     val comments: Int = 0,
     val readDuration: Int = 0,
-    val updatedAt: Long
+    val updatedAt:Long
 )
 
 data class ArticleDataRes(
     val id: String,
-    val date: Date,
+    val date: Date ,
     val author: Author,
     val title: String,
     val description: String,
     val poster: String,
     val category: Category,
-    val tags: List<String> = listOf()
+    val tags : List<String> = listOf()
 )
 
 data class ArticleContentRes(

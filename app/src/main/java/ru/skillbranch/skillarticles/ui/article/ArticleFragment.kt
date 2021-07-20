@@ -32,6 +32,7 @@ import kotlinx.android.synthetic.main.layout_bottombar.view.*
 import kotlinx.android.synthetic.main.layout_submenu.view.*
 import kotlinx.android.synthetic.main.search_view_layout.view.*
 import ru.skillbranch.skillarticles.R
+import ru.skillbranch.skillarticles.data.local.entities.Tag
 import ru.skillbranch.skillarticles.data.repositories.MarkdownElement
 import ru.skillbranch.skillarticles.extensions.*
 import ru.skillbranch.skillarticles.ui.base.*
@@ -391,7 +392,7 @@ class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
             setTint(colorSecondary)
         }
 
-        private var tags by RenderProp(emptyList<String>()) { tags ->
+        private var tags by RenderProp(emptyList<Tag>()) { tags ->
             tv_hashtags.text = buildSpannedString {
                 tags.forEach { tag ->
                     inSpans(
@@ -401,7 +402,7 @@ class ArticleFragment : BaseFragment<ArticleViewModel>(), IArticleView {
                             cornerRadius,
                             gap
                         )
-                    ) { append(tag) }
+                    ) { append(tag.tag) }
                 }
             }
         }

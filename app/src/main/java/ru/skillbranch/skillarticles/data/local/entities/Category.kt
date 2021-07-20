@@ -4,31 +4,33 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "article_categories")
 data class Category(
     @PrimaryKey
     @ColumnInfo(name = "category_id")
-    val categoryId: String,
-    val icon: String,
-    val title: String
+    val categoryId:String,
+    val icon:String,
+    val title:String
 )
 
 data class CategoryData(
     @ColumnInfo(name = "category_id")
-    val categoryId: String,
-    val icon: String,
-    val title: String,
+    val categoryId:String,
+    val icon:String,
+    val title:String,
     @ColumnInfo(name = "articles_count")
-    val articlesCount: Int = 0
-) : Parcelable {
+    val articlesCount:Int = 0
+):Parcelable{
     constructor(parcel: Parcel) : this(
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readString()!!,
         parcel.readInt()
-    )
+    ) {
+    }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeString(categoryId)
