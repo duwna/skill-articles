@@ -1,19 +1,13 @@
 package ru.skillbranch.skillarticles.ui.custom.behaviors
 
-import android.content.Context
-import android.util.AttributeSet
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import ru.skillbranch.skillarticles.extensions.actionBarHeight
+import androidx.core.math.MathUtils
+import androidx.core.view.ViewCompat
 import ru.skillbranch.skillarticles.ui.custom.Bottombar
 
 
-class BottombarBehavior(
-    context: Context,
-    attrs: AttributeSet? = null
-) : CoordinatorLayout.Behavior<Bottombar>(context, attrs) {
-
-    private val actionBarHeight = context.actionBarHeight()
+class BottombarBehavior() : CoordinatorLayout.Behavior<Bottombar>() {
 
     override fun onStartNestedScroll(
         coordinatorLayout: CoordinatorLayout,
@@ -22,60 +16,23 @@ class BottombarBehavior(
         target: View,
         axes: Int,
         type: Int
-    ): Boolean = true
-
-
-    override fun onNestedScroll(
-        coordinatorLayout: CoordinatorLayout,
-        bottombar: Bottombar,
-        target: View,
-        dxConsumed: Int,
-        dyConsumed: Int,
-        dxUnconsumed: Int,
-        dyUnconsumed: Int,
-        type: Int,
-        consumed: IntArray
-    ) {
-
-        val expectedTranslation = bottombar.translationY + dyConsumed
-
-        when {
-            expectedTranslation in 0f..actionBarHeight ->
-                bottombar.translationY = expectedTranslation
-
-            expectedTranslation > actionBarHeight ->
-                bottombar.translationY = actionBarHeight
-
-            expectedTranslation < 0 ->
-                bottombar.translationY = 0f
-        }
-
-        super.onNestedScroll(
-            coordinatorLayout,
-            bottombar,
-            target,
-            dxConsumed,
-            dyConsumed,
-            dxUnconsumed,
-            dyUnconsumed,
-            type,
-            consumed
-        )
+    ): Boolean {
+        return axes == ViewCompat.SCROLL_AXIS_VERTICAL
     }
 
-    override fun onNestedFling(
+    override fun onNestedPreScroll(
         coordinatorLayout: CoordinatorLayout,
-        bottombar: Bottombar,
+        child: Bottombar,
         target: View,
-        velocityX: Float,
-        velocityY: Float,
-        consumed: Boolean
-    ): Boolean {
-
-        bottombar.animate()
-            .translationY(if (velocityY > 0) actionBarHeight else 0f)
-            .duration = 200
-
-        return super.onNestedFling(coordinatorLayout, bottombar, target, velocityX, velocityY, consumed)
+        dx: Int,
+        dy: Int,
+        consumed: IntArray,
+        type: Int
+    ) {
+        if(!child.isSearchMode){
+            val offset = MathUtils.clamp(child.translationY + dy, 0f, child.height.toFloat())
+            if (offset != child.translationY) child.translationY = offset
+        }
+        super.onNestedPreScroll(coordinatorLayout, child, target, dx, dy, consumed, type)
     }
 }
