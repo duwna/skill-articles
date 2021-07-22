@@ -2,9 +2,8 @@ package ru.skillbranch.skillarticles
 
 import android.app.Application
 import android.content.Context
-import android.util.Log
-import androidx.appcompat.app.AppCompatDelegate
-import ru.skillbranch.skillarticles.data.local.PrefManager
+import ru.skillbranch.skillarticles.data.remote.NetworkMonitor
+
 
 class App : Application() {
 
@@ -17,5 +16,10 @@ class App : Application() {
         fun applicationContext(): Context {
             return instance!!.applicationContext
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        NetworkMonitor.registerNetworkMonitor(applicationContext)
     }
 }

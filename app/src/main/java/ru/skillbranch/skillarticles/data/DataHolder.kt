@@ -2,7 +2,7 @@ package ru.skillbranch.skillarticles.data
 
 import ru.skillbranch.skillarticles.data.EntityGenerator.generateArticleRes
 import ru.skillbranch.skillarticles.data.EntityGenerator.generateComments
-import ru.skillbranch.skillarticles.data.models.CommentItemData
+import ru.skillbranch.skillarticles.data.remote.res.CommentRes
 import ru.skillbranch.skillarticles.data.models.User
 import ru.skillbranch.skillarticles.data.remote.res.ArticleContentRes
 import ru.skillbranch.skillarticles.data.remote.res.ArticleRes
@@ -15,7 +15,7 @@ object NetworkDataHolder {
 
     private val networkArticleItems: List<ArticleRes> = generateArticleRes(200)
 
-    val commentsData: Map<String, MutableList<CommentItemData>> by lazy {
+    val commentsData: Map<String, MutableList<CommentRes>> by lazy {
         networkArticleItems.associate { article ->
             article.data.id to generateComments(
                 article.data.id,
@@ -35,28 +35,9 @@ object NetworkDataHolder {
     fun loadArticleContent(articleId: String): ArticleContentRes =
         articleItems[articleId.toInt() % 10].copy(id = articleId ).toArticleContentRes()
 
-    fun sendMessage(articleId: String, text: String, answerToSlug: String?, user: User) {
-        val mutableList =
-            commentsData[articleId] ?: error("Comments for article id : $articleId not found")
-        val index =
-            if (answerToSlug == null) 0 else mutableList.indexOfFirst { it.slug == answerToSlug }.inc()
-        val mess = mutableList.getOrNull(index.dec())
-        val id = "${mutableList.size}"
-        mutableList.add(
-            index,
-            CommentItemData(
-                id,
-                articleId,
-                user,
-                body = text,
-                slug = "${answerToSlug ?: ""}$id/",
-                answerTo = mess?.user?.name,
-                date = Date()
-            )
-        )
-    }
 
-    fun loadComments(slug: String?, size: Int, articleId: String): List<CommentItemData> {
+
+    fun loadComments(slug: String?, size: Int, articleId: String): List<CommentRes> {
         val commentsData = commentsData
             .getOrElse(articleId) { mutableListOf() }
 

@@ -1,12 +1,8 @@
 package ru.skillbranch.skillarticles.data
 
-import ru.skillbranch.skillarticles.data.local.entities.Author
-import ru.skillbranch.skillarticles.data.local.entities.Category
-import ru.skillbranch.skillarticles.data.models.CommentItemData
+import ru.skillbranch.skillarticles.data.remote.res.CommentRes
 import ru.skillbranch.skillarticles.data.models.User
-import ru.skillbranch.skillarticles.data.remote.res.ArticleCountsRes
-import ru.skillbranch.skillarticles.data.remote.res.ArticleDataRes
-import ru.skillbranch.skillarticles.data.remote.res.ArticleRes
+import ru.skillbranch.skillarticles.data.remote.res.*
 import ru.skillbranch.skillarticles.extensions.TimeUnits
 import ru.skillbranch.skillarticles.extensions.add
 import java.util.*
@@ -23,14 +19,14 @@ object EntityGenerator {
                         date = Date().add(-index, TimeUnits.DAY),
                         title = article.title,
                         poster = article.poster,
-                        category = Category(
-                            categoryId = article.categoryId,
+                        category = CategoryRes(
+                            id = article.categoryId,
                             icon = article.categoryIcon,
                             title = article.categoryTitle
                         ),
-                        author = Author(
-                            userId = article.authorId,
-                            avatar = article.authorAvatar,
+                        author = AuthorRes(
+                            id = article.authorId,
+                            avatar = article.authorAvatar ?: "",
                             name = article.authorName
                         ),
                         tags = article.tags,
@@ -41,14 +37,14 @@ object EntityGenerator {
                         comments = 40,
                         likes = (15..100).random(),
                         readDuration = (3..10).random(),
-                        updatedAt = Date().time
-                    )
+                        updatedAt = Date()
+                    ),
+                    isActive = false
                 )
             }
 
-    fun generateComments(articleId: String, count: Int): List<CommentItemData> =
+    fun generateComments(articleId: String, count: Int): List<CommentRes> =
         comments.take(count)
-            .map { it.copy(articleId = articleId) }
 }
 
 
@@ -76,8 +72,7 @@ private val users = Array(5) {
             name = "Christophe Beyls",
             avatar = "https://miro.medium.com/fit/c/96/96/0*zhOjC9mtKiAzmBQo.png",
             rating = (0..100).random(),
-            respect = (0..300).random(),
-            lastVisit = Date().add(-1 * (1..7).random(), TimeUnits.DAY)
+            respect = (0..300).random()
         )
 
         2 -> User(
@@ -85,8 +80,7 @@ private val users = Array(5) {
             name = "Veronika Petruskova",
             avatar = "https://miro.medium.com/fit/c/96/96/1*VSq5CqY3y1Bb4CLK83ZIuw.png",
             rating = (0..100).random(),
-            respect = (0..300).random(),
-            lastVisit = Date().add(-1 * (1..7).random(), TimeUnits.DAY)
+            respect = (0..300).random()
         )
 
         3 -> User(
@@ -94,8 +88,7 @@ private val users = Array(5) {
             name = "Sagar Begale",
             avatar = "https://miro.medium.com/fit/c/96/96/2*0yEmon3hJKcxVIXjSJeR3Q.jpeg",
             rating = (0..100).random(),
-            respect = (0..300).random(),
-            lastVisit = Date().add(-1 * (1..7).random(), TimeUnits.DAY)
+            respect = (0..300).random()
         )
 
         4 -> User(
@@ -103,8 +96,7 @@ private val users = Array(5) {
             name = "Florina Muntenescu",
             avatar = "https://miro.medium.com/fit/c/96/96/1*z2H2HkOuv5bAOuIvUUN-5w.jpeg",
             rating = (0..100).random(),
-            respect = (0..300).random(),
-            lastVisit = Date().add(-1 * (1..7).random(), TimeUnits.DAY)
+            respect = (0..300).random()
         )
 
         else -> User(
@@ -112,8 +104,7 @@ private val users = Array(5) {
             name = "Adam Hurwitz",
             avatar = "https://miro.medium.com/fit/c/96/96/2*0yEmon3hJKcxVIXjSJeR3Q.jpeg",
             rating = (0..100).random(),
-            respect = (0..300).random(),
-            lastVisit = Date().add(-1 * (1..7).random(), TimeUnits.DAY)
+            respect = (0..300).random()
         )
     }
 }.toList()
@@ -129,10 +120,9 @@ private val commentsContent = listOf(
     "Thank you for the explanation!\n\nthis seems like something that the compiler should optimize automatically."
 )
 
-private val comments: List<CommentItemData> = Array(40) {
-    CommentItemData(
+private val comments: List<CommentRes> = Array(40) {
+    CommentRes(
         id = "$it",
-        articleId = "0",
         user = users[users.indices.random()],
         body = commentsContent[commentsContent.indices.random()],
         date = Date().add(-it, TimeUnits.DAY),

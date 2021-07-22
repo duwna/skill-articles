@@ -60,7 +60,7 @@ class RootActivity : BaseActivity<RootViewModel>() {
     }
 
     private fun setupNightMode() {
-        val isDarkMode = PrefManager.getAppSettings().value?.isDarkMode == true
+        val isDarkMode = PrefManager.isDarkMode
         AppCompatDelegate.setDefaultNightMode(
             if (isDarkMode) AppCompatDelegate.MODE_NIGHT_YES
             else AppCompatDelegate.MODE_NIGHT_NO

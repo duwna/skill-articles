@@ -23,10 +23,7 @@ import kotlinx.android.synthetic.main.activity_root.*
 import kotlinx.android.synthetic.main.activity_root.view.*
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.extensions.dpToIntPx
-import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
-import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
-import ru.skillbranch.skillarticles.viewmodels.base.NavigationCommand
-import ru.skillbranch.skillarticles.viewmodels.base.Notify
+import ru.skillbranch.skillarticles.viewmodels.base.*
 
 abstract class BaseActivity<T : BaseViewModel<out IViewModelState>> : AppCompatActivity() {
     protected abstract val viewModel: T
@@ -48,8 +45,20 @@ abstract class BaseActivity<T : BaseViewModel<out IViewModelState>> : AppCompatA
         viewModel.observeState(this) { subscribeOnState(it) }
         viewModel.observeNotifications(this) { renderNotification(it) }
         viewModel.observeNavigation(this) { subscribeOnNavigation(it) }
+        viewModel.observeLoading(this) { renderLoading(it) }
 
         navController = findNavController(R.id.nav_host_fragment)
+    }
+
+    open fun renderLoading(loadingState: Loading) {
+        when(loadingState) {
+            Loading.SHOW_LOADING -> progress.isVisible = true
+            Loading.SHOW_BLOCKING_LOADING -> {
+                progress.isVisible = true
+                TODO()
+            }
+            Loading.HIDE_LOADING -> progress.isVisible = false
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -149,7 +158,8 @@ class ToolbarBuilder() {
                 logo = logoPlaceholder
                 toolbar.logoDescription = "logo"
                 toolbar.doOnNextLayout {
-                    val logo =children.filter { it.contentDescription == "logo" }.first() as ImageView
+                    val logo =
+                        children.filter { it.contentDescription == "logo" }.first() as ImageView
                     logo.scaleType = ImageView.ScaleType.CENTER_CROP
                     (logo.layoutParams as? Toolbar.LayoutParams)?.let {
                         it.width = logoSize

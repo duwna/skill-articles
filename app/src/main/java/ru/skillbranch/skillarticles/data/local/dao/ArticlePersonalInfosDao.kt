@@ -4,14 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
-import ru.skillbranch.skillarticles.data.local.entities.Article
 import ru.skillbranch.skillarticles.data.local.entities.ArticlePersonalInfo
 
 @Dao
 interface ArticlePersonalInfosDao : BaseDao<ArticlePersonalInfo> {
 
     @Transaction
-    fun upsert(list: List<ArticlePersonalInfo>) {
+    suspend fun upsert(list: List<ArticlePersonalInfo>) {
         insert(list)
             .mapIndexed { index, recordLResult ->
                 if (recordLResult == -1L) list[index] else null
@@ -19,27 +18,35 @@ interface ArticlePersonalInfosDao : BaseDao<ArticlePersonalInfo> {
             .also { if (it.isNotEmpty()) update(it) }
     }
 
-    @Query("""
+    @Query(
+        """
         UPDATE article_personal_infos SET is_like = NOT is_like, updated_at = CURRENT_TIMESTAMP
         WHERE article_id = :articleId
-    """)
-    fun toggleLike(articleId: String): Int
+    """
+    )
+    suspend fun toggleLike(articleId: String): Int
 
-    @Query("""
+    @Query(
+        """
         UPDATE article_personal_infos SET is_bookmark = NOT is_bookmark, updated_at = CURRENT_TIMESTAMP
         WHERE article_id = :articleId
-    """)
-    fun toggleBookmark(articleId: String): Int
+    """
+    )
+    suspend fun toggleBookmark(articleId: String): Int
 
     @Transaction
-    fun toggleBookmarkOrInsert(articleId: String) {
+    suspend fun toggleBookmarkOrInsert(articleId: String): Boolean {
         if (toggleBookmark(articleId) == 0) {
             insert(ArticlePersonalInfo(articleId, isBookmark = true))
         }
+        return isBookmarked(articleId)
     }
 
+    @Query("SELECT is_bookmark FROM article_personal_infos WHERE article_id = :articleId")
+    suspend fun isBookmarked(articleId: String): Boolean
+
     @Transaction
-    fun toggleLikeOrInsert(articleId: String) {
+    suspend fun toggleLikeOrInsert(articleId: String) {
         if (toggleLike(articleId) == 0) {
             insert(ArticlePersonalInfo(articleId, isLike = true))
         }
@@ -50,4 +57,7 @@ interface ArticlePersonalInfosDao : BaseDao<ArticlePersonalInfo> {
 
     @Query("SELECT * FROM article_personal_infos WHERE article_id = :articleId")
     fun findPersonalInfos(articleId: String): LiveData<ArticlePersonalInfo>
+
+    @Query("SELECT * FROM article_personal_infos WHERE article_id = :articleId")
+    suspend fun findPersonalInfosTest(articleId: String): ArticlePersonalInfo
 }

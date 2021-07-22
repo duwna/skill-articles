@@ -12,7 +12,7 @@ import ru.skillbranch.skillarticles.data.local.entities.ArticleItem
 interface ArticlesDao : BaseDao<Article> {
 
     @Transaction
-    fun upsert(list: List<Article>) {
+    suspend fun upsert(list: List<Article>) {
         insert(list)
             .mapIndexed { index, recordLResult ->
                 if (recordLResult == -1L) list[index] else null
@@ -58,4 +58,10 @@ interface ArticlesDao : BaseDao<Article> {
         """
     )
     fun findArticlesByTagId(tagId: String): LiveData<List<ArticleItem>>
+
+    @Query("SELECT id FROM articles ORDER BY date LIMIT 1")
+    suspend fun findLastArticleId(): String?
+
+    @Query("SELECT * FROM articles")
+    suspend fun findArticlesTest(): List<Article>
 }
