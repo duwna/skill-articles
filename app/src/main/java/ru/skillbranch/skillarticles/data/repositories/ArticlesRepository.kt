@@ -128,7 +128,9 @@ class ArticleFilter(
 
         if (isBookmark) qb.appendWhere("is_bookmark = 1")
         if (categories.isNotEmpty()) {
-            qb.appendWhere("category_id IN (${categories.joinToString(",")})")
+            qb.appendWhere("category_id IN (${categories.joinToString(
+                ",", transform = {"'$it'"}
+            )})")
         }
 
         qb.orderBy("date")

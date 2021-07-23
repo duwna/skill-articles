@@ -6,39 +6,51 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.navArgs
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import ru.skillbranch.skillarticles.viewmodels.articles.ArticlesViewModel
 
 
 class ChoseCategoryDialog : DialogFragment() {
 
     private val viewModel: ArticlesViewModel by activityViewModels()
-    private val selectedCategories = mutableListOf<String>()
+    private val selected = mutableListOf<String>()
     val args: ChoseCategoryDialogArgs by navArgs()
+
+    private val categoryAdapter = CategoryAdapter { categoryId, isChecked ->
+        if (isChecked) selected.add(categoryId)
+        else selected.remove(categoryId)
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 
-        val categories = args.categories
-            .map { "${it.title} (${it.articlesCount})" }
-            .toTypedArray()
+        selected.clear()
+        selected.addAll(savedInstanceState?.getStringArray("checked") ?: args.selectedCategories)
 
-        val checked = BooleanArray(args.categories.size) {
-            args.selectedCategories.contains(args.categories[it].categoryId)
+        val categoryItems = args.categories.map { it.toItem(selected.contains(it.categoryId)) }
+        categoryAdapter.submitList(categoryItems)
+
+        val recyclerView = RecyclerView(requireContext()).apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = categoryAdapter
         }
 
         val adb = AlertDialog.Builder(requireContext())
             .setTitle("Choose category")
             .setPositiveButton("Apply") { _, _ ->
-                viewModel.applyCategories(selectedCategories)
+                viewModel.applyCategories(selected.toList())
             }
             .setNegativeButton("Reset") { _, _ ->
                 viewModel.applyCategories(emptyList())
             }
-            .setMultiChoiceItems(categories, checked) { dialog, which, isChecked ->
-                if (isChecked) selectedCategories.add(args.categories[which].categoryId)
-                else selectedCategories.remove(args.categories[which].categoryId)
-            }
+            .setView(recyclerView)
 
         return adb.create()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putStringArray("checked", selected.toTypedArray())
+        super.onSaveInstanceState(outState)
     }
 
 }
