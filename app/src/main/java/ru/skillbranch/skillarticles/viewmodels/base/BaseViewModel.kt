@@ -22,6 +22,7 @@ abstract class BaseViewModel<T : IViewModelState>(
     val navigation = MutableLiveData<Event<NavigationCommand>>()
     private val loading = MutableLiveData<Loading>(Loading.HIDE_LOADING)
 
+
     /***
      * Инициализация начального состояния аргументом конструктоа, и объявления состояния как
      * MediatorLiveData - медиатор исспользуется для того чтобы учитывать изменяемые данные модели

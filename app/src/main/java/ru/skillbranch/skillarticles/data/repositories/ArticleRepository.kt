@@ -21,7 +21,7 @@ import ru.skillbranch.skillarticles.extensions.data.toArticleContent
 interface IArticleRepository {
     fun findArticle(articleId: String): LiveData<ArticleFull>
     fun getAppSettings(): LiveData<AppSettings>
-    suspend fun toggleLike(articleId: String)
+    suspend fun toggleLike(articleId: String): Boolean
     suspend fun toggleBookmark(articleId: String): Boolean
     fun isAuth(): LiveData<Boolean>
     suspend fun sendMessage(articleId: String, message: String, answerToMessageId: String?)
@@ -54,8 +54,8 @@ object ArticleRepository : IArticleRepository {
 
     override fun getAppSettings(): LiveData<AppSettings> = preferences.appSettings
 
-    override suspend fun toggleLike(articleId: String) {
-        articlesPersonalDao.toggleLikeOrInsert(articleId)
+    override suspend fun toggleLike(articleId: String): Boolean {
+        return articlesPersonalDao.toggleLikeOrInsert(articleId)
     }
 
     override suspend fun toggleBookmark(articleId: String): Boolean {
@@ -100,7 +100,6 @@ object ArticleRepository : IArticleRepository {
             throw t
         }
     }
-
 
 
     override suspend fun incrementLike(articleId: String) {
@@ -149,7 +148,11 @@ object ArticleRepository : IArticleRepository {
         preferences.isDarkMode = settings.isDarkMode
     }
 
-    override suspend fun sendMessage(articleId: String, message: String, answerToMessageId: String?) {
+    override suspend fun sendMessage(
+        articleId: String,
+        message: String,
+        answerToMessageId: String?
+    ) {
         val (_, messageCount) = network.sendMessage(
             articleId,
             MessageReq(message, answerToMessageId),

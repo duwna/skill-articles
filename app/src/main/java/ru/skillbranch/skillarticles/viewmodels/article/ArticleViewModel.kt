@@ -101,29 +101,29 @@ class ArticleViewModel(
 
     //personal article info
     override fun handleBookmark() {
-        val msg = if (!currentState.isBookmark) "Add to bookmarks" else "Remove from bookmarks"
-        launchSafety(null, { notify(Notify.TextMessage(msg)) }) {
-            val isBookmark = repository.toggleBookmark(articleId)
-            if (isBookmark) repository.addBookmark(articleId)
+        launchSafety {
+            val isBookmarked = repository.toggleBookmark(articleId)
+            if (isBookmarked) repository.addBookmark(articleId)
             else repository.removeBookmark(articleId)
+            val msg = if (isBookmarked) "Add to bookmarks" else "Remove from bookmarks"
+            notify(Notify.TextMessage(msg))
         }
     }
 
     override fun handleLike() {
-        val isLiked = currentState.isLike
-
-        val msg = if (!isLiked) Notify.TextMessage("Mark is liked")
-        else {
-            Notify.ActionMessage(
-                "Don`t like it anymore", //message
-                "No, still like it", //action label on snackbar
-                ::handleLike
-            )
-        }
-        launchSafety(null, { notify(msg) }) {
-            repository.toggleLike(articleId)
-            if (isLiked) repository.decrementLike(articleId)
-            else repository.incrementLike(articleId)
+        launchSafety {
+            val isLiked = repository.toggleLike(articleId)
+            if (isLiked) repository.incrementLike(articleId)
+            else repository.decrementLike(articleId)
+            val msg = if (!isLiked) Notify.TextMessage("Article marked as liked")
+            else {
+                Notify.ActionMessage(
+                    "Don`t like it anymore", //message
+                    "No, still like it", //action label on snackbar
+                    ::handleLike
+                )
+            }
+            notify(msg)
         }
     }
 

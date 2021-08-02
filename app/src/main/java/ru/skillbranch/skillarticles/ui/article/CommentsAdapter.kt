@@ -1,5 +1,6 @@
 package ru.skillbranch.skillarticles.ui.article
 
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
