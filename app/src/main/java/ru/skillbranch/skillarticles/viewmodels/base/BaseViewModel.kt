@@ -22,6 +22,7 @@ abstract class BaseViewModel<T : IViewModelState>(
     val navigation = MutableLiveData<Event<NavigationCommand>>()
     private val loading = MutableLiveData<Loading>(Loading.HIDE_LOADING)
 
+    val permissions = MutableLiveData<Event<List<String>>>()
 
     /***
      * Инициализация начального состояния аргументом конструктоа, и объявления состояния как
@@ -165,6 +166,14 @@ abstract class BaseViewModel<T : IViewModelState>(
             hideLoading()
             compHandler?.invoke(it)
         }
+    }
+
+    protected fun requestPermissions(requestedPermissions: List<String>) {
+        permissions.value = Event(requestedPermissions)
+    }
+
+    fun observePermissions(owner: LifecycleOwner, handle: (List<String>) -> Unit) {
+        permissions.observe(owner, EventObserver { handle(it) })
     }
 
 }
