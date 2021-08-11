@@ -4,9 +4,11 @@ import android.content.Context
 import dagger.Module
 import dagger.Provides
 import ru.skillbranch.skillarticles.data.local.PrefManager
+import javax.inject.Singleton
 
 @Module
-class PreferencesModule(val context: Context) {
+object PreferencesModule {
     @Provides
-    fun providePrefManager(): PrefManager = PrefManager(context)
+    @Singleton
+    fun providePrefManager(context: Context): PrefManager = PrefManager(context)
 }

@@ -43,13 +43,9 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        appComponent = DaggerAppComponent.builder()
-            .networkUtilsModule(NetworkUtilsModule(applicationContext))
-            .preferencesModule(PreferencesModule(applicationContext))
-            .build()
+        appComponent = AppComponent.Factory.create(applicationContext)
 
         activityComponent = DaggerActivityComponent.builder()
-            .activityModule(ActivityModule())
             .appComponent(appComponent)
             .build()
 
