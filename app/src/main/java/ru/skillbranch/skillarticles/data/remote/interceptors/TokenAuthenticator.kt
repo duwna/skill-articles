@@ -4,13 +4,14 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
+import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.remote.NetworkManager
 import ru.skillbranch.skillarticles.data.remote.req.RefreshReq
 
 class TokenAuthenticator : Authenticator {
 
-    private val prefs = PrefManager
+    private val prefs = App.tempPrefManager
     private val api by lazy { NetworkManager.api }
 
     override fun authenticate(route: Route?, response: Response): Request? {

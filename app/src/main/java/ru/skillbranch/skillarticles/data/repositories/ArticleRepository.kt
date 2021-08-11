@@ -3,6 +3,7 @@ package ru.skillbranch.skillarticles.data.repositories
 import androidx.lifecycle.LiveData
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
+import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.local.DbManager.db
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.local.dao.ArticleContentsDao
@@ -42,7 +43,7 @@ interface IArticleRepository {
 
 object ArticleRepository : IArticleRepository {
     private val network = NetworkManager.api
-    val preferences = PrefManager
+    val preferences = App.tempPrefManager
     private var articlesDao = db.articlesDao()
     private var articlesPersonalDao = db.articlePersonalInfosDao()
     private var articlesCountsDao = db.articleCountsDao()

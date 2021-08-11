@@ -2,12 +2,13 @@ package ru.skillbranch.skillarticles.data.repositories
 
 import androidx.lifecycle.LiveData
 import okhttp3.MultipartBody
+import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.models.User
 import ru.skillbranch.skillarticles.data.remote.NetworkManager
 
 object ProfileRepository {
-    private val prefs = PrefManager
+    private val prefs = App.tempPrefManager
     private val network = NetworkManager.api
 
     fun getProfile(): LiveData<User?> = prefs.profileLive

@@ -7,6 +7,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_root.*
+import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.extensions.selectDestination
@@ -60,7 +61,7 @@ class RootActivity : BaseActivity<RootViewModel>() {
     }
 
     private fun setupNightMode() {
-        val isDarkMode = PrefManager.isDarkMode
+        val isDarkMode = App.tempPrefManager.isDarkMode
         AppCompatDelegate.setDefaultNightMode(
             if (isDarkMode) AppCompatDelegate.MODE_NIGHT_YES
             else AppCompatDelegate.MODE_NIGHT_NO

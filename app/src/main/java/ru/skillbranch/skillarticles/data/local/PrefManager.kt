@@ -1,5 +1,6 @@
 package ru.skillbranch.skillarticles.data.local
 
+import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
@@ -15,10 +16,10 @@ import ru.skillbranch.skillarticles.data.delegates.PrefObjDelegate
 import ru.skillbranch.skillarticles.data.models.AppSettings
 import ru.skillbranch.skillarticles.data.models.User
 
-object PrefManager {
+class PrefManager(context: Context) {
 
     internal val preferences: SharedPreferences by lazy {
-        PreferenceManager.getDefaultSharedPreferences(App.applicationContext())
+        PreferenceManager.getDefaultSharedPreferences(context)
     }
 
     var isDarkMode by PrefDelegate(false)
@@ -50,6 +51,10 @@ object PrefManager {
 
     fun clearAll() {
         preferences.edit().clear().apply()
+    }
+
+    fun replaceAvatarUrl(url: String) {
+        profile = profile!!.copy(avatar = url)
     }
 
     fun replaceAvatarUrl(url: String) {

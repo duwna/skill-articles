@@ -1,16 +1,17 @@
 package ru.skillbranch.skillarticles.data.repositories
 
 import androidx.lifecycle.LiveData
+import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.remote.NetworkManager
 import ru.skillbranch.skillarticles.data.remote.req.LoginReq
 
 object RootRepository {
 
-    private val preferences = PrefManager
+    private val preferences = App.tempPrefManager
     private val network = NetworkManager.api
 
-    fun isAuth(): LiveData<Boolean> = PrefManager.isAuthLive
+    fun isAuth(): LiveData<Boolean> = App.tempPrefManager.isAuthLive
     fun setAuth(auth: Boolean) {
 
     }

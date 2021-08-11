@@ -8,20 +8,19 @@ import android.net.NetworkRequest
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.MutableLiveData
 
-object NetworkMonitor {
+class NetworkMonitor(context: Context) {
     var isConnected = false
     val isConnectedLive = MutableLiveData(false)
     val networkTypeLive = MutableLiveData(NetworkType.NONE)
 
     @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-    fun setNetworkIsConnected(isConnected:Boolean = true) { this.isConnected = isConnected }
+    fun setNetworkIsConnected(isConnected: Boolean = true) {
+        this.isConnected = isConnected
+    }
 
-    private lateinit var cm: ConnectivityManager
+    private val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    fun registerNetworkMonitor(ctx: Context) {
-        cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        obtainNetworkType(cm.activeNetwork?.let { cm.getNetworkCapabilities(it) })
-            .also { networkTypeLive.postValue(it) }
+    fun registerNetworkMonitor() {
 
         cm.registerNetworkCallback(NetworkRequest.Builder().build(),
             object : ConnectivityManager.NetworkCallback() {
