@@ -1,6 +1,5 @@
 package ru.skillbranch.skillarticles.ui.article
 
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.paging.PagedListAdapter
@@ -8,10 +7,13 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import ru.skillbranch.skillarticles.data.remote.res.CommentRes
 import ru.skillbranch.skillarticles.ui.custom.CommentItemView
+import javax.inject.Inject
 
-class CommentsAdapter(private val listener: (CommentRes) -> Unit) :
+class CommentsAdapter @Inject constructor(private val listener: IArticleView) :
     PagedListAdapter<CommentRes, CommentVH>(CommentDiffCallback()) {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentVH = CommentVH(CommentItemView(parent.context), listener)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentVH {
+        return CommentVH(CommentItemView(parent.context), listener::clickOnComment)
+    }
 
     override fun onBindViewHolder(holder: CommentVH, position: Int) {
         holder.bind(getItem(position))

@@ -3,20 +3,21 @@ package ru.skillbranch.skillarticles.data.repositories
 import androidx.lifecycle.LiveData
 import androidx.paging.DataSource
 import androidx.sqlite.db.SimpleSQLiteQuery
-import ru.skillbranch.skillarticles.data.local.DbManager.db
+import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.local.dao.*
 import ru.skillbranch.skillarticles.data.local.entities.ArticleItem
 import ru.skillbranch.skillarticles.data.local.entities.ArticleTagXRef
 import ru.skillbranch.skillarticles.data.local.entities.CategoryData
 import ru.skillbranch.skillarticles.data.local.entities.Tag
-import ru.skillbranch.skillarticles.data.remote.NetworkManager
+import ru.skillbranch.skillarticles.data.remote.RestService
 import ru.skillbranch.skillarticles.data.remote.res.ArticleRes
 import ru.skillbranch.skillarticles.extensions.data.toArticle
 import ru.skillbranch.skillarticles.extensions.data.toArticleContent
 import ru.skillbranch.skillarticles.extensions.data.toArticleCounts
 import ru.skillbranch.skillarticles.extensions.data.toCategory
+import javax.inject.Inject
 
-interface IArticlesRepository {
+interface IArticlesRepository : IRepository {
     suspend fun loadArticlesFromNetwork(start: String?, size: Int = 10): Int
     suspend fun insertArticlesToDb(articles: List<ArticleRes>)
     suspend fun toggleBookmark(articleId: String): Boolean
@@ -26,16 +27,15 @@ interface IArticlesRepository {
     suspend fun incrementTagUseCount(tag: String)
 }
 
-object ArticlesRepository : IArticlesRepository {
-
-    private val network = NetworkManager.api
-    private var articlesDao = db.articlesDao()
-    private var articleCountsDao = db.articleCountsDao()
-    private var categoriesDao = db.categoriesDao()
-    private var articleContentsDao = db.articleContentsDao()
-    private var tagsDao = db.tagsDao()
-    private var articlePersonalDao = db.articlePersonalInfosDao()
-    private var articlesContentDao = db.articleContentsDao()
+class ArticlesRepository @Inject constructor(
+    private val network: RestService,
+    private var articlesDao: ArticlesDao,
+    private var articleCountsDao: ArticleCountsDao,
+    private var categoriesDao: CategoriesDao,
+    private var articleContentsDao: ArticleContentsDao,
+    private var tagsDao: TagsDao,
+    private var articlePersonalDao: ArticlePersonalInfosDao,
+) : IArticlesRepository {
 
     override suspend fun loadArticlesFromNetwork(start: String?, size: Int): Int {
         val items = network.articles(start, size)
@@ -81,22 +81,6 @@ object ArticlesRepository : IArticlesRepository {
         tagsDao.incrementTagUseCount(tag)
     }
 
-    fun setupTestDao(
-        articlesDao: ArticlesDao,
-        articleCountsDao: ArticleCountsDao,
-        categoriesDao: CategoriesDao,
-        tagsDao: TagsDao,
-        articlePersonalDao: ArticlePersonalInfosDao,
-        articlesContentDao: ArticleContentsDao
-    ) {
-        this.articlesDao = articlesDao
-        this.articleCountsDao = articleCountsDao
-        this.categoriesDao = categoriesDao
-        this.tagsDao = tagsDao
-        this.articlePersonalDao = articlePersonalDao
-        this.articlesContentDao = articlesContentDao
-    }
-
     suspend fun findLastArticleId(): String? = articlesDao.findLastArticleId()
 
     suspend fun fetchArticleContent(articleId: String) {
@@ -128,9 +112,11 @@ class ArticleFilter(
 
         if (isBookmark) qb.appendWhere("is_bookmark = 1")
         if (categories.isNotEmpty()) {
-            qb.appendWhere("category_id IN (${categories.joinToString(
-                ",", transform = {"'$it'"}
-            )})")
+            qb.appendWhere("category_id IN (${
+                categories.joinToString(
+                    ",", transform = { "'$it'" }
+                )
+            })")
         }
 
         qb.orderBy("date")

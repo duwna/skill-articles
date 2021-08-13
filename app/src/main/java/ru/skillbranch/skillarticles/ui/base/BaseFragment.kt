@@ -8,10 +8,13 @@ import ru.skillbranch.skillarticles.ui.RootActivity
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.Loading
+import javax.inject.Inject
 
 abstract class BaseFragment<T : BaseViewModel<out IViewModelState>> : Fragment() {
-    val root: RootActivity
-        get() = activity as RootActivity
+
+    @Inject
+    lateinit var root: RootActivity
+
     open val binding: Binding? = null
     protected abstract val viewModel: T
     protected abstract val layout: Int

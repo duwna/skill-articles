@@ -1,26 +1,26 @@
 package ru.skillbranch.skillarticles.data.repositories
 
 import androidx.lifecycle.LiveData
-import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.local.PrefManager
-import ru.skillbranch.skillarticles.data.remote.NetworkManager
+import ru.skillbranch.skillarticles.data.remote.RestService
 import ru.skillbranch.skillarticles.data.remote.req.LoginReq
+import javax.inject.Inject
 
-object RootRepository {
+class RootRepository @Inject constructor(
+    private val prefManager: PrefManager,
+    private val network: RestService
+) : IRepository {
 
-    private val preferences = App.tempPrefManager
-    private val network = NetworkManager.api
+    fun isAuth(): LiveData<Boolean> = prefManager.isAuthLive
 
-    fun isAuth(): LiveData<Boolean> = App.tempPrefManager.isAuthLive
     fun setAuth(auth: Boolean) {
 
     }
 
     suspend fun login(login: String, pass: String) {
         val auth = network.login(LoginReq(login, pass))
-
-        preferences.profile = auth.user
-        preferences.accessToken = "Bearer ${auth.accessToken}"
-        preferences.refreshToken = auth.refreshToken
+        prefManager.profile = auth.user
+        prefManager.accessToken = "Bearer ${auth.accessToken}"
+        prefManager.refreshToken = auth.refreshToken
     }
 }

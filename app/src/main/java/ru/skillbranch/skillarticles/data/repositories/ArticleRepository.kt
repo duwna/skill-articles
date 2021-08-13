@@ -3,8 +3,6 @@ package ru.skillbranch.skillarticles.data.repositories
 import androidx.lifecycle.LiveData
 import androidx.paging.DataSource
 import androidx.paging.ItemKeyedDataSource
-import ru.skillbranch.skillarticles.App
-import ru.skillbranch.skillarticles.data.local.DbManager.db
 import ru.skillbranch.skillarticles.data.local.PrefManager
 import ru.skillbranch.skillarticles.data.local.dao.ArticleContentsDao
 import ru.skillbranch.skillarticles.data.local.dao.ArticleCountsDao
@@ -12,14 +10,14 @@ import ru.skillbranch.skillarticles.data.local.dao.ArticlePersonalInfosDao
 import ru.skillbranch.skillarticles.data.local.dao.ArticlesDao
 import ru.skillbranch.skillarticles.data.local.entities.ArticleFull
 import ru.skillbranch.skillarticles.data.models.AppSettings
-import ru.skillbranch.skillarticles.data.remote.NetworkManager
 import ru.skillbranch.skillarticles.data.remote.RestService
 import ru.skillbranch.skillarticles.data.remote.err.NoNetworkError
 import ru.skillbranch.skillarticles.data.remote.req.MessageReq
 import ru.skillbranch.skillarticles.data.remote.res.CommentRes
 import ru.skillbranch.skillarticles.extensions.data.toArticleContent
+import javax.inject.Inject
 
-interface IArticleRepository {
+interface IArticleRepository : IRepository {
     fun findArticle(articleId: String): LiveData<ArticleFull>
     fun getAppSettings(): LiveData<AppSettings>
     suspend fun toggleLike(articleId: String): Boolean
@@ -41,13 +39,14 @@ interface IArticleRepository {
     suspend fun removeBookmark(articleId: String)
 }
 
-object ArticleRepository : IArticleRepository {
-    private val network = NetworkManager.api
-    val preferences = App.tempPrefManager
-    private var articlesDao = db.articlesDao()
-    private var articlesPersonalDao = db.articlePersonalInfosDao()
-    private var articlesCountsDao = db.articleCountsDao()
-    private var articlesContentDao = db.articleContentsDao()
+class ArticleRepository @Inject constructor(
+    private val network: RestService,
+    private val preferences: PrefManager,
+    private var articlesDao: ArticlesDao,
+    private var articlesPersonalDao: ArticlePersonalInfosDao,
+    private var articlesCountsDao: ArticleCountsDao,
+    private var articlesContentDao: ArticleContentsDao
+) : IArticleRepository {
 
     override fun findArticle(articleId: String): LiveData<ArticleFull> {
         return articlesDao.findFullArticle(articleId)
@@ -160,18 +159,6 @@ object ArticleRepository : IArticleRepository {
             preferences.accessToken
         )
         articlesCountsDao.updateCommentsCount(articleId, messageCount)
-    }
-
-    fun setupTestDao(
-        articlesDao: ArticlesDao,
-        articleCountsDao: ArticleCountsDao,
-        articleContentDao: ArticleContentsDao,
-        articlePersonalDao: ArticlePersonalInfosDao
-    ) {
-        this.articlesDao = articlesDao
-        this.articlesCountsDao = articleCountsDao
-        this.articlesContentDao = articleContentDao
-        this.articlesPersonalDao = articlePersonalDao
     }
 
     suspend fun refreshCommentsCount(articleId: String) {

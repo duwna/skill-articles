@@ -6,10 +6,10 @@ import ru.skillbranch.skillarticles.App
 import ru.skillbranch.skillarticles.data.remote.NetworkMonitor
 import ru.skillbranch.skillarticles.data.remote.err.NoNetworkError
 
-class NetworkStatusInterceptor : Interceptor {
+class NetworkStatusInterceptor(private val monitor: NetworkMonitor) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        if (!App.tempMonitor.isConnected) throw NoNetworkError()
+        if (!monitor.isConnected) throw NoNetworkError()
         return chain.proceed(chain.request())
     }
 

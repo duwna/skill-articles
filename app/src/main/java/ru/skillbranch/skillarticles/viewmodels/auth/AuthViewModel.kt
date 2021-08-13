@@ -1,14 +1,20 @@
 package ru.skillbranch.skillarticles.viewmodels.auth
 
 import androidx.lifecycle.SavedStateHandle
+import dagger.assisted.Assisted
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ru.skillbranch.skillarticles.data.repositories.RootRepository
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.NavigationCommand
+import javax.inject.Inject
 
-class AuthViewModel(handle: SavedStateHandle) : BaseViewModel<AuthState>(handle, AuthState()),
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    handle: SavedStateHandle,
+    private val repository: RootRepository
+) : BaseViewModel<AuthState>(handle, AuthState()),
     IAuthViewModel {
-    private val repository = RootRepository
 
     init {
         subscribeOnDataSource(repository.isAuth()) { isAuth, state ->

@@ -4,6 +4,8 @@ import androidx.lifecycle.*
 import androidx.paging.DataSource
 import androidx.paging.LivePagedListBuilder
 import androidx.paging.PagedList
+import dagger.assisted.Assisted
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ru.skillbranch.skillarticles.data.local.entities.ArticleItem
 import ru.skillbranch.skillarticles.data.local.entities.CategoryData
 import ru.skillbranch.skillarticles.data.remote.err.NoNetworkError
@@ -13,11 +15,13 @@ import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.Notify
 import java.util.concurrent.Executors
+import javax.inject.Inject
 
-class ArticlesViewModel(handle: SavedStateHandle) :
-    BaseViewModel<ArticlesState>(handle, ArticlesState()) {
-
-    private val repository = ArticlesRepository
+@HiltViewModel
+class ArticlesViewModel @Inject constructor(
+    handle: SavedStateHandle,
+    private val repository: ArticlesRepository
+) : BaseViewModel<ArticlesState>(handle, ArticlesState()) {
 
     private var isLoadingInitial = false
     private var isLoadingAfter = false

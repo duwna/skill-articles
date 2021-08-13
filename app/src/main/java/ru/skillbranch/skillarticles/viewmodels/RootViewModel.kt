@@ -1,14 +1,19 @@
 package ru.skillbranch.skillarticles.viewmodels
 
 import androidx.lifecycle.SavedStateHandle
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ru.skillbranch.skillarticles.R
 import ru.skillbranch.skillarticles.data.repositories.RootRepository
 import ru.skillbranch.skillarticles.viewmodels.base.BaseViewModel
 import ru.skillbranch.skillarticles.viewmodels.base.IViewModelState
 import ru.skillbranch.skillarticles.viewmodels.base.NavigationCommand
+import javax.inject.Inject
 
-class RootViewModel(handle: SavedStateHandle) : BaseViewModel<RootState>(handle, RootState()) {
-    private val repository: RootRepository = RootRepository
+@HiltViewModel
+class RootViewModel @Inject constructor(
+    repository: RootRepository,
+    handle: SavedStateHandle
+) : BaseViewModel<RootState>(handle, RootState()) {
     private val privateRoutes = listOf(R.id.nav_profile)
 
     init {
@@ -18,12 +23,12 @@ class RootViewModel(handle: SavedStateHandle) : BaseViewModel<RootState>(handle,
     }
 
     override fun navigate(command: NavigationCommand) {
-        when(command){
-            is NavigationCommand.To ->{
-                if(privateRoutes.contains(command.destination) && !currentState.isAuth){
+        when (command) {
+            is NavigationCommand.To -> {
+                if (privateRoutes.contains(command.destination) && !currentState.isAuth) {
                     //set requested destination as arg
                     super.navigate(NavigationCommand.StartLogin(command.destination))
-                }else{
+                } else {
                     super.navigate(command)
                 }
             }
